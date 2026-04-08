@@ -127,7 +127,79 @@ body::before{
   background:rgba(200,168,74,.06);
 }
 
-/* ── DOSSIER HEADER ── */
+/* ── HIDDEN-MODE CONTROLS BAR ── */
+#hidden-controls{
+  position:absolute;
+  bottom:72px;left:50%;transform:translateX(-50%);
+  z-index:13;
+  display:none;
+  align-items:center;gap:14px;
+  background:rgba(6,6,10,.75);
+  border:1px solid rgba(200,168,74,.2);
+  backdrop-filter:blur(12px);
+  border-radius:3px;
+  padding:8px 20px;
+  white-space:nowrap;
+}
+#hidden-controls.show{display:flex;}
+.hc-label{font-family:var(--mono);font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream3);}
+.hc-slider{accent-color:var(--gold);height:3px;cursor:pointer;}
+.hc-val{font-family:var(--mono);font-size:8.5px;color:var(--gold);min-width:32px;text-align:right;}
+.hc-sep{width:1px;height:24px;background:var(--edge);}
+
+/* ── CARD FORMULA MODAL ── */
+#card-modal{
+  position:absolute;inset:0;
+  z-index:50;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(6,6,10,.75);
+  backdrop-filter:blur(8px);
+}
+#card-modal.show{display:flex;}
+.modal-box{
+  background:var(--deep);
+  border:1px solid rgba(200,168,74,.3);
+  border-top:2px solid var(--gold);
+  max-width:520px;width:90%;
+  padding:28px 32px;
+  position:relative;
+  box-shadow:0 24px 64px rgba(0,0,0,.8);
+  animation:fadeup .2s ease;
+}
+.modal-close{
+  position:absolute;top:12px;right:14px;
+  background:transparent;border:none;
+  color:var(--cream3);font-size:18px;cursor:pointer;
+  line-height:1;transition:color .12s;
+}
+.modal-close:hover{color:var(--cream);}
+.modal-sym{
+  font-family:var(--serif);font-size:2.2rem;font-style:italic;
+  margin-bottom:4px;
+}
+.modal-val{
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+  margin-bottom:6px;
+}
+.modal-formula{
+  font-family:var(--mono);font-size:10px;
+  color:var(--teal);
+  background:rgba(42,184,168,.07);
+  border-left:2px solid var(--teal);
+  padding:8px 14px;margin:14px 0;
+  letter-spacing:.02em;
+}
+.modal-derivation{
+  font-family:var(--mono);font-size:9px;
+  color:var(--cream3);line-height:1.9;
+}
+.modal-derivation .step{
+  display:block;padding:2px 0;
+  border-bottom:1px solid var(--edge2);
+}
+.modal-derivation .step:last-child{border:none;}
+.modal-derivation .step.highlight{color:var(--gold);}
+.modal-desc{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--cream3);margin-bottom:14px;}
 #dossier-header{
   position:relative;border-bottom:1px solid var(--edge);overflow:hidden;
 }
@@ -316,6 +388,33 @@ footer a{color:var(--cream3);text-decoration:none;}
     <button class="op-btn small" onclick="exportOpenerPNG()">Export PNG</button>
     <button class="op-btn small" onclick="exportConstantsCSV()">Export CSV</button>
     <button class="op-btn small" onclick="toggleOpenerFS()">Fullscreen</button>
+  </div>
+
+  <!-- hidden-mode persistent controls (speed + zoom) -->
+  <div id="hidden-controls">
+    <span class="hc-label">Speed</span>
+    <input class="hc-slider" type="range" id="hc-speed" min="1" max="20" value="8" style="width:90px"
+      oninput="opSpeedVal=+this.value;document.getElementById('hc-speed-v').textContent=this.value+'×'">
+    <span class="hc-val" id="hc-speed-v">8×</span>
+    <div class="hc-sep"></div>
+    <span class="hc-label">Zoom</span>
+    <input class="hc-slider" type="range" id="hc-zoom" min="50" max="200" value="100" style="width:90px"
+      oninput="opZoom=+this.value/100;document.getElementById('hc-zoom-v').textContent=this.value+'%';drawOpener()">
+    <span class="hc-val" id="hc-zoom-v">100%</span>
+    <div class="hc-sep"></div>
+    <button class="op-btn small" onclick="opZoom=1;document.getElementById('hc-zoom').value=100;document.getElementById('hc-zoom-v').textContent='100%';drawOpener()">Reset</button>
+  </div>
+
+  <!-- card formula modal -->
+  <div id="card-modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <div class="modal-sym" id="modal-sym"></div>
+      <div class="modal-val" id="modal-val"></div>
+      <div class="modal-desc" id="modal-desc"></div>
+      <div class="modal-formula" id="modal-formula"></div>
+      <div class="modal-derivation" id="modal-derivation"></div>
+    </div>
   </div>
 </div>
 
@@ -560,14 +659,115 @@ const steps=[];
 
 // Constants for popup cards
 const CONSTANTS=[
-  {sym:'C',val:'0.530711806246…',desc:'Lift Survival Constant',color:'var(--gold)'},
-  {sym:'J',val:'0.773156601274…',desc:'Jump Content Σ 1/p(p−1)',color:'var(--teal)'},
-  {sym:'φ',val:'1.618033988749…',desc:'Golden Ratio Sentinel',color:'var(--gold)'},
-  {sym:'ζ(2)',val:'1.644934066848…',desc:'π²/6 — Euler',color:'var(--cream2)'},
-  {sym:'d_FT',val:'0.322634616577…',desc:'Feller-Tornier constant',color:'var(--cream2)'},
-  {sym:'D₀',val:'0.551691597558…',desc:'D(0) = Σ 1/(p²−1)',color:'var(--violet)'},
-  {sym:'C₂',val:'0.660161815846…',desc:'Hardy-Littlewood twin primes',color:'var(--coral)'},
-  {sym:'P(2)',val:'0.452247420041…',desc:'Prime zeta P(2) = Σ 1/p²',color:'var(--teal)'},
+  {
+    sym:'C', val:'0.530711806246…', desc:'Lift Survival Constant', color:'var(--gold)',
+    formula:'C = ζ(2) · d_FT = ∏ₚ (p²−2)/(p²−1)',
+    derivation:[
+      'Start: C(x) = ∏_{p≤x} (p²−2)/(p²−1)',
+      'Factor each term: (p²−2)/(p²−1) = [p²/(p²−1)] · [(p²−2)/p²]',
+      '= [1/(1−1/p²)] · [1 − 2/p²]',
+      'Product over all p:',
+      'C = ζ(2) · ∏ₚ(1 − 2/p²)',
+      '= (π²/6) · d_FT',
+      '≈ 1.6449… × 0.3226… = 0.530711806246…',
+      'OEIS A065469 · verified to p ≤ 400M'
+    ]
+  },
+  {
+    sym:'J', val:'0.773156601274…', desc:'Jump Content Σ 1/p(p−1)', color:'var(--teal)',
+    formula:'J = Σₚ 1/p(p−1) = Σ_{k≥2} P(k)',
+    derivation:[
+      'Each prime p contributes a jump s = 1/p(p−1) to D(x)',
+      'J = total jump mass = Σₚ s_p = Σₚ 1/p(p−1)',
+      'Partial fractions: 1/p(p−1) = 1/(p−1) − 1/p',
+      'Also: 1/p(p−1) = Σ_{k≥2} 1/p^k  (geometric series)',
+      'So J = Σ_{k≥2} Σₚ 1/p^k = Σ_{k≥2} P(k)',
+      'where P(k) = Σₚ 1/p^k is the prime zeta function',
+      'J ≈ P(2)+P(3)+P(4)+… = 0.4522+0.1748+… ≈ 0.773156…'
+    ]
+  },
+  {
+    sym:'φ', val:'1.618033988749…', desc:'Golden Ratio Sentinel', color:'var(--gold)',
+    formula:'φ = (1+√5)/2 = lim_{s→1} p(s)',
+    derivation:[
+      'Recovery formula: p(s) = (1+√(1+4/s))/2',
+      'At s = 1: p(1) = (1+√5)/2 = φ',
+      'φ satisfies: φ² − φ − 1 = 0',
+      '  ↳ this is sp²−sp−1=0 evaluated at s=1',
+      '  ↳ also the Fibonacci recurrence characteristic eq',
+      'No prime produces s=1:',
+      '  s = 1/p(p−1) < 1/2 for all primes p≥2',
+      'φ is the infimum of {p(s) : p prime} — unreachable'
+    ]
+  },
+  {
+    sym:'ζ(2)', val:'1.644934066848…', desc:'π²/6 — Euler (1734)', color:'var(--cream2)',
+    formula:'ζ(2) = Σ_{n≥1} 1/n² = π²/6 = ∏ₚ 1/(1−1/p²)',
+    derivation:[
+      'Euler (1734): sin(πx)/πx = ∏_{n≥1}(1−x²/n²)',
+      'Expand both sides as power series in x²:',
+      '  LHS: 1 − π²x²/6 + …',
+      '  RHS: 1 − (Σ 1/n²)x² + …',
+      'Matching x² coefficient: Σ 1/n² = π²/6',
+      'Euler product: ζ(2) = ∏ₚ p²/(p²−1)',
+      'ζ(2) ≈ 1 + 1/4 + 1/9 + 1/16 + … = 1.6449340668…'
+    ]
+  },
+  {
+    sym:'d_FT', val:'0.322634616577…', desc:'Feller-Tornier constant', color:'var(--cream2)',
+    formula:'d_FT = ∏ₚ(1−2/p²) = C/ζ(2)',
+    derivation:[
+      'Density of integers n where rad(n)² | n has no prime²:',
+      'd_FT = density of {n : gcd(n,n+1) squarefree factor}',
+      'Euler product: d_FT = ∏ₚ(1 − 2/p²)',
+      '  Each p contributes: Prob(p²∤n AND p²∤n+1)',
+      '  = 1 − 2/p² (inclusion-exclusion over consecutive)',
+      'd_FT = C / ζ(2) = 0.5307… / 1.6449… = 0.3226…',
+      'OEIS A065474'
+    ]
+  },
+  {
+    sym:'D₀', val:'0.551691597558…', desc:'D(0) initial sonar value', color:'var(--violet)',
+    formula:'D₀ = D(0) = Σₚ 1/(p²−1)',
+    derivation:[
+      'D(x) = −d/dx log C(x) = Σ_{p>x+1} 1/(p²−x−1)',
+      'At x = 0: D(0) = Σₚ 1/(p²−1)',
+      'Partial fractions: 1/(p²−1) = ½[1/(p−1) − 1/(p+1)]',
+      'Equivalently: D₀ = Σₚ 1/(p²−1)',
+      '  = 1/(2²−1) + 1/(3²−1) + 1/(5²−1) + …',
+      '  = 1/3 + 1/8 + 1/24 + 1/48 + …',
+      '≈ 0.551691597558…',
+      'This is the sonar field intensity at x=0'
+    ]
+  },
+  {
+    sym:'C₂', val:'0.660161815846…', desc:'Hardy-Littlewood twin prime constant', color:'var(--coral)',
+    formula:'C₂ = 2∏_{p≥3}(p(p−2)/(p−1)²)',
+    derivation:[
+      'Hardy-Littlewood Conjecture B (1923):',
+      'π₂(x) ~ 2C₂ · x / (log x)²',
+      'where π₂(x) = #{p≤x : p+2 prime}',
+      'C₂ = 2 · ∏_{p≥3} p(p−2)/(p−1)²',
+      '  = 2 · (3·1/4) · (5·3/16) · (7·5/36) · …',
+      'Connection to C:',
+      '  C₂ / C ≈ 1.244 (ratio is computable)',
+      'C₂ ≈ 0.660161815846869… OEIS A005597'
+    ]
+  },
+  {
+    sym:'P(2)', val:'0.452247420041…', desc:'Prime zeta function at 2', color:'var(--teal)',
+    formula:'P(2) = Σₚ 1/p² = Σ_{k≥1} μ(k)/k · log ζ(2k)',
+    derivation:[
+      'P(s) = Σₚ 1/pˢ — the prime zeta function',
+      'At s=2: P(2) = 1/4 + 1/9 + 1/25 + 1/49 + …',
+      'Möbius inversion from ζ:',
+      '  log ζ(s) = Σₚ Σ_{k≥1} 1/(k·p^{ks})',
+      '  P(s) = Σ_{k≥1} μ(k)/k · log ζ(ks)',
+      'At s=2: P(2) = log ζ(2) − ½log ζ(4) + …',
+      '  ≈ 0.4796 − 0.0494 + … = 0.45224…',
+      'First term of J: J = P(2)+P(3)+P(4)+…'
+    ]
+  },
 ];
 
 // ─── OPENER CANVAS ────────────────────────────────────────────
@@ -578,9 +778,9 @@ let opRAF=null, opAnimating=false;
 let opTime=0;
 let opPreset='convergence';
 let opTextVisible=true;
-let opParticles=[];
+let opZoom=1.0;
+let opSpeedVal=8;
 let opStepIdx=0;
-let opCardTimers=[];
 
 const PRESET_CONFIGS={
   convergence:{
@@ -626,6 +826,12 @@ function drawOpener(){
   opG.save(); opG.scale(devicePixelRatio,devicePixelRatio);
   const cfg=PRESET_CONFIGS[opPreset];
   opG.fillStyle=cfg.bg; opG.fillRect(0,0,opW,opH);
+  // Apply zoom centered on canvas
+  if(opZoom!==1){
+    opG.translate(opW/2,opH/2);
+    opG.scale(opZoom,opZoom);
+    opG.translate(-opW/2,-opH/2);
+  }
   cfg.draw(opG,opW,opH,opTime,opStepIdx);
   opG.restore();
 }
@@ -1020,9 +1226,9 @@ function drawIdentityScene(g,W,H,t,si){
 // ─── OPENER ANIMATION LOOP ─────────────────────────────────────
 function opLoop(){
   if(!opAnimating){opRAF=null;return;}
-  opTime++;
+  opTime+=Math.max(1,Math.round(opSpeedVal/4));
   // Auto-step convergence
-  if(opPreset==='convergence'&&opTime%18===0&&opStepIdx<steps.length) opStepIdx++;
+  if(opPreset==='convergence'&&opTime%(Math.max(4,20-opSpeedVal))===0&&opStepIdx<steps.length) opStepIdx++;
   drawOpener();
   updateCards();
   opRAF=requestAnimationFrame(opLoop);
@@ -1039,6 +1245,8 @@ function toggleOpenerText(){
   const el=document.getElementById('opener-text');
   el.classList.toggle('hidden',!opTextVisible);
   document.getElementById('btn-toggle-text').textContent=opTextVisible?'Hide text':'Show text';
+  // Show persistent controls when text is hidden
+  document.getElementById('hidden-controls').classList.toggle('show',!opTextVisible);
 }
 
 // ─── CONSTANT CARDS ────────────────────────────────────────────
@@ -1059,9 +1267,33 @@ function buildCards(){
     div.id='ccard-'+i;
     const pos=CARD_POSITIONS[i]||CARD_POSITIONS[0];
     Object.assign(div.style,pos);
-    div.innerHTML=`<div class="ccard-label">${c.sym}</div><div class="ccard-val" style="color:${c.color}">${c.val}</div><div class="ccard-sub">${c.desc}</div>`;
+    div.style.cursor='pointer';
+    div.title='Click for derivation';
+    div.innerHTML=`<div class="ccard-label">${c.sym}</div><div class="ccard-val" style="color:${c.color}">${c.val}</div><div class="ccard-sub">${c.desc}</div><div style="font-family:var(--mono);font-size:6.5px;color:rgba(200,168,74,.35);margin-top:5px;letter-spacing:.08em;">click for formula →</div>`;
+    div.addEventListener('click',()=>openModal(ci));
     cardContainer.appendChild(div);
   });
+}
+
+function openModal(ci){
+  const c=CONSTANTS[ci];
+  document.getElementById('modal-sym').textContent=c.sym;
+  document.getElementById('modal-sym').style.color=c.color;
+  document.getElementById('modal-val').textContent=c.val;
+  document.getElementById('modal-val').style.color=c.color;
+  document.getElementById('modal-desc').textContent=c.desc;
+  document.getElementById('modal-formula').textContent=c.formula;
+  const deriv=document.getElementById('modal-derivation');
+  deriv.innerHTML=c.derivation.map((line,i)=>{
+    const isLast=i===c.derivation.length-1;
+    const isResult=line.includes('≈')||line.includes('OEIS')||line.includes('=0.')||line.includes('= 0.');
+    return `<span class="step${isResult?' highlight':''}">${line}</span>`;
+  }).join('');
+  document.getElementById('card-modal').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('card-modal').classList.remove('show');
 }
 
 function updateCards(){
@@ -1328,6 +1560,25 @@ const io=new IntersectionObserver(entries=>{
 resizeOpener();
 buildCards();
 setTimeout(showCardsNow,800);
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeModal();
+});
+
+// Scroll-wheel zoom on opener canvas
+opCv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const delta=e.deltaY>0?-0.05:0.05;
+  opZoom=Math.max(0.4,Math.min(4,opZoom+delta));
+  const pct=Math.round(opZoom*100);
+  const sl=document.getElementById('hc-zoom');
+  const vl=document.getElementById('hc-zoom-v');
+  if(sl){sl.value=pct;}
+  if(vl){vl.textContent=pct+'%';}
+  drawOpener();
+},{passive:false});
+
 // Start opener animation
 setTimeout(()=>{
   opAnimating=true;
