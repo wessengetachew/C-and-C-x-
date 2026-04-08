@@ -3,8 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lift Survival — Ratio Explorer</title>
+<title>Modular Lifting Rings — W. Getachew</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Cinzel:wght@400;500&family=Syne:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap');
+:root{
+  --bg:#06060a;--bg1:#0a0a10;--bg2:#0f0f18;--bg3:#161622;
+  --edge:rgba(255,255,255,.06);--edge2:rgba(255,255,255,.12);
+  --gold:#c8a84a;--gold2:#e8cb6a;--teal:#3dc8b8;--coral:#e05060;
+  --violet:#9070d8;--lime:#7ec85a;--sky:#4898e8;--orange:#e8904a;
+  --cream:rgba(255,255,255,.92);--cream2:rgba(255,255,255,.65);--cream3:rgba(255,255,255,.30);
+  --mono:'JetBrains Mono',monospace;--serif:'Spectral',serif;
+  --disp:'Cinzel',serif;--sans:'Syne',sans-serif;--w:720px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--cream);font-family:var(--serif);overflow-x:hidden;}
+#nav{position:fixed;top:0;left:0;right:0;height:52px;background:rgba(6,6,10,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--edge);display:flex;align-items:center;padding:0 28px;gap:0;z-index:300;}
+.nav-brand{font-family:var(--disp);font-size:.78rem;font-weight:400;color:var(--gold);letter-spacing:.14em;white-space:nowrap;margin-right:22px;}
+.nav-tabs{display:flex;gap:0;}
+.nav-tab{padding:0 18px;height:52px;display:flex;align-items:center;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream3);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap;}
+.nav-tab:hover{color:var(--cream2);}.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.nav-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.nav-pill{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);background:rgba(200,168,74,.09);border:1px solid rgba(200,168,74,.22);padding:3px 10px;white-space:nowrap;}
+#compute-bar{font-family:var(--mono);font-size:8.5px;color:var(--cream3);letter-spacing:.1em;}
+.page{display:none;min-height:100vh;}.page.active{display:block;}
+details.open-probs{margin:24px 0;border:1px solid rgba(200,168,74,.2);background:rgba(200,168,74,.04);}
+details.open-probs summary{padding:13px 18px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:.17em;text-transform:uppercase;color:var(--gold);list-style:none;display:flex;justify-content:space-between;align-items:center;}
+details.open-probs summary::-webkit-details-marker{display:none;}
+details.open-probs summary::after{content:"\25BE";font-size:12px;transition:transform .2s;}
+details.open-probs[open] summary::after{transform:rotate(180deg);}
+details.open-probs .op-inner{padding:0 18px 14px;}
+#doc{max-width:var(--w);margin:0 auto;padding:72px 40px 100px;font-size:18px;line-height:1.85;}
+#mh{text-align:center;padding:56px 0 58px;border-bottom:1px solid var(--edge);margin-bottom:58px;}
+.mh-rule{width:34px;height:1px;background:var(--gold);margin:0 auto 22px;}
+.mh-title{font-family:var(--disp);font-size:clamp(1.4rem,3.2vw,2.2rem);font-weight:400;line-height:1.2;color:var(--cream);letter-spacing:.06em;margin-bottom:8px;}
+.mh-subtitle{font-family:var(--serif);font-size:.93rem;font-style:italic;color:var(--cream3);font-weight:300;margin-bottom:26px;}
+.mh-author{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.mh-date{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--cream3);}
+.section{margin-bottom:64px;padding-bottom:64px;border-bottom:1px solid var(--edge);scroll-margin-top:62px;}
+.section:last-child{border-bottom:none;}
+.sec-n{font-family:var(--mono);font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);opacity:.55;margin-bottom:10px;}
+.sec-title{font-family:var(--disp);font-size:clamp(1.1rem,2.2vw,1.55rem);font-weight:400;line-height:1.2;color:var(--cream);margin-bottom:22px;letter-spacing:.04em;}
+p{color:var(--cream2);margin-bottom:18px;}p strong{color:var(--cream);font-weight:500;}p em{font-style:italic;color:var(--cream);}
+.block{margin:26px 0;padding:18px 22px;background:var(--bg1);border:1px solid var(--edge);border-left:3px solid;}
+.block.def{border-left-color:var(--teal);}.block.thm{border-left-color:var(--gold2);}.block.prop{border-left-color:var(--violet);}.block.obs{border-left-color:var(--cream3);}.block.rmk{border-left-color:var(--lime);}
+.block-tag{font-family:var(--mono);font-size:8.5px;letter-spacing:.17em;text-transform:uppercase;margin-bottom:9px;}
+.def .block-tag{color:var(--teal);}.thm .block-tag{color:var(--gold2);}.prop .block-tag{color:var(--violet);}.obs .block-tag{color:var(--cream3);}.rmk .block-tag{color:var(--lime);}
+.block-body{font-family:var(--serif);font-size:16px;line-height:1.78;color:var(--cream);}
+.proof{margin:14px 0 22px 18px;padding:13px 17px;border-left:1px solid var(--edge2);background:rgba(255,255,255,.015);}
+.proof-tag{font-family:var(--mono);font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--cream3);margin-bottom:7px;}
+.proof-body{font-family:var(--serif);font-size:15px;line-height:1.72;color:var(--cream2);}
+.qed{float:right;color:var(--cream3);font-size:16px;}
+.eq{margin:18px 0;padding:13px 18px;background:var(--bg2);border:1px solid var(--edge);font-family:var(--mono);font-size:13px;color:var(--gold2);line-height:2.1;overflow-x:auto;text-align:center;}
+.eq .ann{display:block;text-align:left;font-family:var(--serif);font-size:12.5px;font-style:italic;color:var(--cream3);margin-top:4px;line-height:1.5;}
+.tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin:20px 0;}
+.tbl th{text-align:left;padding:8px 12px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream3);border-bottom:1px solid var(--edge2);}
+.tbl td{padding:7px 12px;border-bottom:1px solid var(--edge);color:var(--cream2);}
+.tbl tr:hover td{background:rgba(255,255,255,.02);}.tbl .hi{color:var(--gold2);}.tbl .ok{color:var(--teal);}.tbl .new{color:var(--lime);}
+.const-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;}
+@media(max-width:520px){.const-grid{grid-template-columns:1fr;}}
+.cc{padding:13px 15px;background:var(--bg2);border:1px solid var(--edge);}.cc-sym{font-family:var(--disp);font-size:1.15rem;color:var(--gold2);margin-bottom:3px;}.cc-def{font-family:var(--mono);font-size:10px;color:var(--cream3);margin-bottom:4px;}.cc-val{font-family:var(--mono);font-size:11px;color:var(--teal);margin-bottom:3px;}.cc-rel{font-family:var(--serif);font-size:12.5px;font-style:italic;color:var(--cream3);}
+.op{padding:13px 16px;background:var(--bg2);border:1px solid rgba(200,168,74,.18);margin:10px 0;display:flex;gap:12px;}.op-n{font-family:var(--mono);font-size:10px;color:var(--gold);min-width:18px;padding-top:1px;}.op-body{font-family:var(--serif);font-size:15px;color:var(--cream2);line-height:1.65;}
+.pill{display:inline-block;font-family:var(--mono);font-size:8px;letter-spacing:.13em;text-transform:uppercase;padding:2px 8px;margin-left:8px;vertical-align:middle;}
+.pill-alg{background:rgba(200,168,74,.1);color:var(--gold);border:1px solid rgba(200,168,74,.25);}.pill-thm{background:rgba(61,200,184,.1);color:var(--teal);border:1px solid rgba(61,200,184,.25);}.pill-new{background:rgba(126,200,90,.1);color:var(--lime);border:1px solid rgba(126,200,90,.25);}.pill-open{background:rgba(224,80,96,.1);color:var(--coral);border:1px solid rgba(224,80,96,.25);}.pill-obs{background:rgba(144,112,216,.1);color:var(--violet);border:1px solid rgba(144,112,216,.25);}.pill-cor{border-left-color:var(--coral);}
+.fig{margin:26px 0;background:var(--bg1);border:1px solid var(--edge);}.fig-cap{padding:9px 13px;border-top:1px solid var(--edge);font-family:var(--serif);font-size:13px;font-style:italic;color:var(--cream3);line-height:1.5;}.fig-cap strong{font-style:normal;color:var(--cream2);}canvas.fig-c{display:block;width:100%;background:var(--bg);}
+#toc{margin-bottom:52px;padding:18px 22px;background:var(--bg2);border:1px solid var(--edge);}.toc-hd{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream3);margin-bottom:12px;}.toc-list{list-style:none;}.toc-list li{padding:5px 0;border-bottom:1px solid var(--edge);font-family:var(--serif);font-size:15px;}.toc-list li:last-child{border-bottom:none;}.toc-list a{color:var(--cream2);text-decoration:none;transition:color .15s;}.toc-list a:hover{color:var(--gold);}.toc-n{font-family:var(--mono);font-size:10px;color:var(--cream3);margin-right:11px;}
+#explorer-page #hd{display:none!important;}
+
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
 :root{
   --bg:#07070b;--bg1:#0c0c14;--bg2:#111119;--bg3:#191924;
@@ -26,9 +90,10 @@ body{background:var(--bg);color:var(--cream);font-family:var(--sans);overflow-x:
 #compute-bar{font-family:var(--mono);font-size:9px;color:var(--cream3);letter-spacing:.1em;}
 
 /* ── LAYOUT ── */
-#wrap{padding-top:52px;display:grid;grid-template-columns:280px 1fr;min-height:100vh;}
+#wrap{padding-top:0;display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 52px);overflow:hidden;}
 #left{grid-row:1/2;background:var(--bg1);border-right:1px solid var(--edge);display:flex;flex-direction:column;overflow-y:auto;height:calc(100vh - 52px);position:sticky;top:52px;}
-#right{display:flex;flex-direction:column;overflow:hidden;}
+#right{display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+#mcw{flex:1;position:relative;overflow:hidden;min-height:200px;}
 
 /* ── LEFT ── */
 .ps{padding:18px 18px 14px;border-bottom:1px solid var(--edge);}
@@ -69,7 +134,6 @@ select.prec-sel{background:var(--bg3);color:var(--gold);border:1px solid var(--e
 .prim-badge.show{display:block;}
 
 /* ── MAIN CANVAS ── */
-#mcw{flex:1;position:relative;overflow:hidden;min-height:380px;}
 #mc{display:block;width:100%;height:100%;}
 .clabels{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:3px;pointer-events:none;}
 .cl{display:flex;align-items:center;gap:6px;background:rgba(7,7,11,.8);padding:3px 8px;font-family:var(--mono);font-size:9px;color:var(--cream2);}
@@ -143,22 +207,469 @@ table.rt .prow{background:rgba(200,168,74,.05);}
 .ctable td:first-child{text-align:left;color:var(--gold2);}
 .ctable .prow{background:rgba(200,168,74,.05);}
 
-@media(max-width:680px){#wrap{grid-template-columns:1fr;}#left{position:static;height:auto;}#rinfo{display:none;}}
+/* ── HEADER TABS ── */
+.hd-tabs{display:flex;gap:0;margin:0 8px;}
+.hd-tab{padding:0 16px;height:52px;display:flex;align-items:center;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.hd-tab:hover{color:var(--cream2);}
+.hd-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* ── TAB PANELS ── */
+.tab-panel{display:none;} .tab-panel.active{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+
+/* ── C(x) / F(u) PANEL ── */
+#cx-panel{background:var(--bg);flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.cx-toolbar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--edge);background:var(--bg1);flex-wrap:wrap;}
+.cx-tl{font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--cream3);}
+.cx-canvases{display:grid;grid-template-columns:1fr 1fr;flex:1;gap:0;overflow:hidden;}
+.cx-pane{display:flex;flex-direction:column;border-right:1px solid var(--edge);}
+.cx-pane:last-child{border-right:none;}
+.cx-pane-title{padding:10px 16px;border-bottom:1px solid var(--edge);font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--cream3);display:flex;justify-content:space-between;align-items:center;}
+.cx-pane-title span{color:var(--gold2);font-size:11px;}
+canvas.cx-canvas{display:block;width:100%;flex:1;}
+.cx-stats{display:flex;border-top:1px solid var(--edge);background:var(--bg1);}
+.cx-stat{flex:1;padding:8px 12px;border-right:1px solid var(--edge);}
+.cx-stat:last-child{border-right:none;}
+.cx-sl{font-family:var(--mono);font-size:7.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--cream3);margin-bottom:2px;}
+.cx-sv{font-family:var(--mono);font-size:12px;color:var(--gold2);}
+
+/* ── F(u) annotations ── */
+.fu-desc{padding:10px 16px;border-top:1px solid var(--edge);font-family:var(--mono);font-size:9px;color:var(--cream3);line-height:1.7;background:var(--bg1);}
+
+@media(max-width:700px){.cx-canvases{grid-template-columns:1fr;}.hd-tabs{display:none;}}
+
 </style>
 </head>
 <body>
 
-<div id="hd">
-  <div class="hd-title">Lift Survival · Ratio Explorer</div>
-  <div id="compute-bar">computing…</div>
-  <div class="hd-right">
-    <div class="hd-pill" id="hd-M">M = 1</div>
-    <div class="hd-pill" id="hd-C">C → —</div>
-    <div class="hd-pill" id="hd-phi">φ/M → —</div>
+<div id="nav">
+  <div class="nav-brand">W. Getachew &middot; 2026</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchPage('paper')">Paper</div>
+    <div class="nav-tab" onclick="switchPage('explorer')">Explorer</div>
+    <div class="nav-tab" onclick="switchPage('cx')">C(x) &amp; F(u)</div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-pill" id="hd-M" style="display:none">M = &mdash;</div>
+    <div class="nav-pill" id="hd-C" style="display:none">C &rarr; &mdash;</div>
+    <div class="nav-pill" id="hd-phi" style="display:none">&phi;/M &rarr; &mdash;</div>
+    <div id="compute-bar"></div>
   </div>
 </div>
 
-<div id="wrap">
+<!-- PAPER PAGE -->
+<div class="page active" id="paper-page">
+<div id="doc">
+<div id="mh">
+  <div class="mh-rule"></div>
+  <div class="mh-title">Modular Lifting Rings<br>and Prime Geometry</div>
+  <div class="mh-subtitle">The Analytic Lift Function &middot; Constants &middot; Zero Spectrum &middot; M&ouml;bius</div>
+  <div class="mh-author">Wessen Getachew</div>
+  <div class="mh-date">math.NT &middot; 2025&ndash;2026</div>
+</div>
+<div id="toc">
+  <div class="toc-hd">Contents</div>
+  <ul class="toc-list">
+    <li><a href="#s0"><span class="toc-n">0.</span>The Setting</a></li>
+    <li><a href="#s1"><span class="toc-n">1.</span>Definition of F(u)</a></li>
+    <li><a href="#s2"><span class="toc-n">2.</span>Landmarks on [0, 4)</a></li>
+    <li><a href="#s3"><span class="toc-n">3.</span>The Zero Spectrum</a></li>
+    <li><a href="#s4"><span class="toc-n">4.</span>Derivative at u=1 &middot; Constant S</a></li>
+    <li><a href="#s5"><span class="toc-n">5.</span>All Constants &middot; S, Q, U</a></li>
+    <li><a href="#s6"><span class="toc-n">6.</span>Algebraic Relations</a></li>
+    <li><a href="#s7"><span class="toc-n">7.</span>Gap Ratio Theorem</a></li>
+    <li><a href="#s8"><span class="toc-n">8.</span>&phi; Spectral Obstruction</a></li>
+    <li><a href="#s8b"><span class="toc-n">8b.</span>F(u) and M&ouml;bius</a></li>
+    <li><a href="#s9"><span class="toc-n">9.</span>Open Problems ▾</a></li>
+    <li><a href="#s10"><span class="toc-n">10.</span>Twin Primes in the Framework</a></li>
+  </ul>
+</div>
+
+
+<!-- §0 -->
+<div class="section" id="s0">
+  <div class="sec-n">Section 0</div>
+  <div class="sec-title">The Setting</div>
+
+  <p>Fix a positive integer M. The coprime residues of M are the elements of (ℤ/Mℤ)* — all r in {1,…,M} with gcd(r, M) = 1. A residue r <em>lifts</em> from ring M to ring M+1 if it satisfies gcd(r, M) = 1 and gcd(r, M+1) = 1 simultaneously. The long-run fraction of residues that lift converges to a constant C, defined by an Euler product over all primes.</p>
+
+  <p>The analytic lift function F(u) is the natural one-parameter generalization of this product. It unifies several of the most important constants in the framework — ζ(2), C, and the number 1 — as values at specific arguments, and it encodes the entire prime sequence in its zero set.</p>
+</div>
+
+<!-- §1 -->
+<div class="section" id="s1">
+  <div class="sec-n">Section 1</div>
+  <div class="sec-title">Definition of F(u) <span class="pill pill-thm">Verified</span></div>
+
+  <div class="block def">
+    <div class="block-tag">Definition 1.1 — The Analytic Lift Function</div>
+    <div class="block-body">
+      For u ∈ ℝ, define
+      <div class="eq">F(u) = ∏<sub>p prime</sub> (p² − u) / (p² − 1)</div>
+      The product converges absolutely for all u ∈ ℝ \ {p² : p prime}. At u = p² for any prime p, F vanishes because the factor for that prime is zero. F is a meromorphic function of a complex variable u, real-valued and smooth on ℝ away from its zero set.
+    </div>
+  </div>
+
+  <p>The factor at prime p is (p² − u)/(p² − 1). Its numerator is linear in u; its denominator is the fixed constant p² − 1 > 0. Each factor equals 1 at u = 1, equals p²/(p²−1) at u = 0, and equals (p²−2)/(p²−1) at u = 2.</p>
+
+  <div class="block rmk">
+    <div class="block-tag">Remark 1.2 — Convergence</div>
+    <div class="block-body">For fixed u not a prime square, the product converges absolutely because log|(p²−u)/(p²−1)| ~ −u/p² for large p, and ∑ 1/p² converges. The convergence is uniform on compact subsets of ℝ avoiding the zero set.</div>
+  </div>
+</div>
+
+<!-- §2 -->
+<div class="section" id="s2">
+  <div class="sec-n">Section 2</div>
+  <div class="sec-title">Landmarks on [0, 4) <span class="pill pill-alg">Algebraic</span></div>
+
+  <p>The interval [0, 4) is the maximal interval on which F is positive. It contains four distinguished points, each corresponding to a fundamental object.</p>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 2.1 — Three Exact Values</div>
+    <div class="block-body">
+      <strong>(i) F(0) = ζ(2) = π²/6.</strong><br>
+      At u = 0, each factor is p²/(p²−1). The product ∏_p p²/(p²−1) is the Euler product for ζ(2). This is exact and classical.<br><br>
+      <strong>(ii) F(1) = 1 exactly.</strong><br>
+      At u = 1, each factor is (p²−1)/(p²−1) = 1. The product of ones is 1. This holds term by term and requires no computation.<br><br>
+      <strong>(iii) F(2) = C ≈ 0.530711806246.</strong><br>
+      At u = 2, each factor is (p²−2)/(p²−1). The product is the lift survival constant C, the long-run fraction of coprime residues that lift from ring M to M+1.
+    </div>
+  </div>
+
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <div class="proof-body">
+      (i) By definition ζ(2) = ∑ n⁻² = ∏_p (1 − p⁻²)⁻¹ = ∏_p p²/(p²−1). This is the Euler product identity. (ii) Each factor at u=1 is (p²−1)/(p²−1) = 1, so F(1) = ∏_p 1 = 1. (iii) Substituting u=2 into the definition of F gives the Euler product for C by definition.
+      <span class="qed">□</span>
+    </div>
+  </div>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 2.2 — F is Strictly Decreasing on [0, 4)</div>
+    <div class="block-body">F is strictly decreasing on [0, 4). In particular, F(0) > F(1) > F(2) > F(3) > F(4) = 0, giving the chain ζ(2) > 1 > C > F(3) > 0.</div>
+  </div>
+
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <div class="proof-body">
+      The log-derivative d/du log F(u) = ∑_p −1/(p²−u) is strictly negative for u &lt; 4 (all denominators p²−u are positive). Hence F is strictly decreasing on (−∞, 4). <span class="qed">□</span>
+    </div>
+  </div>
+
+  <!-- Landmark diagram canvas -->
+  <div class="fig">
+    <canvas class="fig-c" id="landmark-canvas" height="200"></canvas>
+    <div class="fig-cap"><strong>Figure 1.</strong> F(u) on [0, 4]. The four landmarks ζ(2), 1, C, and 0 are marked. F is strictly decreasing, positive on (−∞,4), and vanishes at u = 4 = 2².</div>
+  </div>
+
+  <div class="block obs">
+    <div class="block-tag">Observation 2.3 — Arithmetic of the Landmark Values</div>
+    <div class="block-body">
+      The three nonzero landmarks satisfy:
+      <div class="eq">F(0) · F(2) = ζ(2) · C = ζ(2) · ∏<sub>p</sub>(1 − 2/p²)<br>
+      <span class="ann">This is the content of Theorem 1.2 of the main paper: C = ζ(2)·∏(1−2/p²).</span></div>
+      Also: F(0)/F(1) = ζ(2) and F(1)/F(2) = 1/C, so the three landmarks are in ratio ζ(2) : 1 : C with F(1) = 1 as the normalization point.
+    </div>
+  </div>
+</div>
+
+<!-- §3 -->
+<div class="section" id="s3">
+  <div class="sec-n">Section 3</div>
+  <div class="sec-title">The Zero Spectrum <span class="pill pill-thm">Proved</span></div>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 3.1 — The Zero Set of F</div>
+    <div class="block-body">
+      The zeros of F on ℝ are exactly the set {p² : p prime} = {4, 9, 25, 49, 121, 169, 289, …}. Each zero is simple (of order 1). The map p ↦ p² is a bijection from the primes to the zeros of F. Equivalently, √(zero) recovers the prime.
+    </div>
+  </div>
+
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <div class="proof-body">
+      F(u) = 0 iff at least one factor is zero. The factor for prime p vanishes iff p² − u = 0, i.e., u = p². All prime squares are distinct (since primes are distinct), so each u = p² kills exactly one factor while leaving all others nonzero. Hence F(p²) = 0 and the zero has order exactly 1 (the factor is linear in u near u = p²). <span class="qed">□</span>
+    </div>
+  </div>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 3.2 — Sign Alternation</div>
+    <div class="block-body">
+      Let p₁ &lt; p₂ &lt; … be the primes in order. On the interval (p_n², p_{n+1}²), the sign of F is (−1)ⁿ. That is:
+      <div class="eq">sign F(u) = (−1)^#{primes q : q² &lt; u}<br>
+      <span class="ann">F &gt; 0 on (−∞, 4), F &lt; 0 on (4, 9), F &gt; 0 on (9, 25), and so on.</span></div>
+      The sign changes of F on ℝ occur at exactly the prime squares, and reading off the sign-change locations recovers the primes.
+    </div>
+  </div>
+
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <div class="proof-body">On (p_n², p_{n+1}²), exactly n factors have negative numerator (those with q ≤ p_n, so q² &lt; u). All other factors are positive. The product of n negative factors and infinitely many positive ones has sign (−1)ⁿ. <span class="qed">□</span>
+    </div>
+  </div>
+
+  <table class="tbl">
+    <thead><tr><th>Interval</th><th>Zero bounding it</th><th>Sign of F</th><th>n</th></tr></thead>
+    <tbody>
+      <tr><td class="hi">(−∞, 4)</td><td>2² = 4</td><td class="ok">+ (positive)</td><td>0</td></tr>
+      <tr><td class="hi">(4, 9)</td><td>3² = 9</td><td style="color:var(--coral)">− (negative)</td><td>1</td></tr>
+      <tr><td class="hi">(9, 25)</td><td>5² = 25</td><td class="ok">+ (positive)</td><td>2</td></tr>
+      <tr><td class="hi">(25, 49)</td><td>7² = 49</td><td style="color:var(--coral)">− (negative)</td><td>3</td></tr>
+      <tr><td class="hi">(49, 121)</td><td>11² = 121</td><td class="ok">+ (positive)</td><td>4</td></tr>
+      <tr><td class="hi">(121, 169)</td><td>13² = 169</td><td style="color:var(--coral)">− (negative)</td><td>5</td></tr>
+    </tbody>
+  </table>
+
+  <div class="block obs">
+    <div class="block-tag">Observation 3.3 — The Boundary of the Positive Region</div>
+    <div class="block-body">The interval (−∞, 4) is the maximal interval on which F is positive. Its right endpoint is the square of the smallest prime, 2² = 4. All of the framework's constants — ζ(2), C, J, D₀, T — correspond to F evaluated at u ∈ [0, 2] ⊂ (−∞, 4). The prime 2 is not just the first prime: it is the boundary condition for the entire positive regime of F.</div>
+  </div>
+</div>
+
+<!-- §4 -->
+<div class="section" id="s4">
+  <div class="sec-n">Section 4</div>
+  <div class="sec-title">The Derivative at u = 1 <span class="pill pill-new">New</span></div>
+
+  <p>Since F(1) = 1, the derivative F'(1) is the slope of F at its unique normalization point. It introduces a new constant into the framework.</p>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 4.1 — The Slope Constant S</div>
+    <div class="block-body">
+      <div class="eq">F'(1) = −S &nbsp;&nbsp; where &nbsp;&nbsp; S = ∑<sub>p prime</sub> 1/(p² − 1)<br>
+      <span class="ann">S ≈ 0.551693183169550. F'(1) is negative, consistent with F decreasing.</span></div>
+    </div>
+  </div>
+
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <div class="proof-body">
+      Differentiating log F(u) = ∑_p log((p²−u)/(p²−1)) with respect to u:
+      <div class="eq" style="margin:10px 0; font-size:12px;">d/du log F(u) = ∑_p −1/(p²−u)</div>
+      So F'(u)/F(u) = −∑_p 1/(p²−u). At u = 1: F'(1)/F(1) = −∑_p 1/(p²−1). Since F(1) = 1, we get F'(1) = −S where S = ∑_p 1/(p²−1). <span class="qed">□</span>
+    </div>
+  </div>
+
+  <div class="block def">
+    <div class="block-tag">Definition 4.2 — The Constant S</div>
+    <div class="block-body">
+      S = ∑<sub>p prime</sub> 1/(p²−1) = ∑<sub>p</sub> 1/((p−1)(p+1)) ≈ 0.551693183169550.
+      <br><br>
+      S also satisfies the decomposition S = D₀ + Q, where:
+      <div class="eq">Q = ∑<sub>p</sub> 1/(p²(p²−1)) ≈ 0.099445877615934<br>
+      <span class="ann">Proof: 1/(p²−1) = 1/p² + 1/(p²(p²−1)). Algebraic, term by term.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- §5 -->
+<div class="section" id="s5">
+  <div class="sec-n">Section 5</div>
+  <div class="sec-title">The Constants of the Framework</div>
+
+  <p>The framework has generated eight constants, all arising naturally from F(u) and the lift survival geometry. Three are classical (ζ(2), C, D₀). Five appear to be new (J, T, S, Q, U).</p>
+
+  <div class="const-grid">
+    <div class="cc">
+      <div class="cc-sym">ζ(2)</div>
+      <div class="cc-def">= ∏_p p²/(p²−1) = π²/6</div>
+      <div class="cc-val">≈ 1.644934066848226</div>
+      <div class="cc-rel">F(0). Classical (Euler 1734).</div>
+    </div>
+    <div class="cc">
+      <div class="cc-sym">C</div>
+      <div class="cc-def">= ∏_p (p²−2)/(p²−1)</div>
+      <div class="cc-val">≈ 0.530711806246</div>
+      <div class="cc-rel">F(2). Lift survival constant. A065469.</div>
+    </div>
+    <div class="cc">
+      <div class="cc-sym">J</div>
+      <div class="cc-def">= ∑_p 1/(p(p−1))</div>
+      <div class="cc-val">≈ 0.773156554562249</div>
+      <div class="cc-rel">Total jump content. J = D₀ + T.</div>
+    </div>
+    <div class="cc">
+      <div class="cc-sym">D₀</div>
+      <div class="cc-def">= ∑_p 1/p² = P(2)</div>
+      <div class="cc-val">≈ 0.452247305553616</div>
+      <div class="cc-rel">Prime zeta P(2). Known.</div>
+    </div>
+    <div class="cc">
+      <div class="cc-sym">T</div>
+      <div class="cc-def">= ∑_p 1/(p²(p−1))</div>
+      <div class="cc-val">≈ 0.320909249008633</div>
+      <div class="cc-rel">Carry term. T = J − D₀.</div>
+    </div>
+    <div class="cc" style="border-color:rgba(126,200,90,.3)">
+      <div class="cc-sym" style="color:var(--lime)">S</div>
+      <div class="cc-def">= ∑_p 1/(p²−1) = −F'(1)</div>
+      <div class="cc-val">≈ 0.551693183169550</div>
+      <div class="cc-rel">Slope of F at normalization point. New.</div>
+    </div>
+    <div class="cc" style="border-color:rgba(126,200,90,.3)">
+      <div class="cc-sym" style="color:var(--lime)">Q</div>
+      <div class="cc-def">= ∑_p 1/(p²(p²−1)) = S − D₀</div>
+      <div class="cc-val">≈ 0.099445877615934</div>
+      <div class="cc-rel">Second carry. Arises from S = D₀ + Q.</div>
+    </div>
+    <div class="cc" style="border-color:rgba(126,200,90,.3)">
+      <div class="cc-sym" style="color:var(--lime)">U</div>
+      <div class="cc-def">= ∑_p 1/(p(p−1)(p+1)) = J − S</div>
+      <div class="cc-val">≈ 0.221463371392699</div>
+      <div class="cc-rel">Gap between J and S. New.</div>
+    </div>
+  </div>
+</div>
+
+<!-- §6 -->
+<div class="section" id="s6">
+  <div class="sec-n">Section 6</div>
+  <div class="sec-title">Algebraic Relations <span class="pill pill-alg">All exact</span></div>
+
+  <p>All of the following identities hold term-by-term over all primes. None require computation — they are algebraic consequences of partial fraction decomposition.</p>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 6.1 — J = D₀ + T</div>
+    <div class="block-body">
+      <div class="eq">1/(p(p−1)) = 1/p² + 1/(p²(p−1)) &nbsp; for every prime p<br>
+      <span class="ann">Summing: J = D₀ + T. Each prime's contribution to J splits exactly into its D₀-part and T-part.</span></div>
+    </div>
+  </div>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 6.2 — C = ζ(2) · ∏(1−2/p²)</div>
+    <div class="block-body">
+      <div class="eq">C = ζ(2) · ∏<sub>p</sub>(1 − 2/p²)<br>
+      <span class="ann">Proof: ∏[p²/(p²−1)] · ∏[(p²−2)/p²] = ∏[(p²−2)/(p²−1)] = C. The p² cancels term by term.</span></div>
+      Equivalently, C = ζ(2)·(2d_FT − 1) where d_FT is the Feller–Tornier constant.
+    </div>
+  </div>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 6.3 — S = D₀ + Q</div>
+    <div class="block-body">
+      <div class="eq">1/(p²−1) = 1/p² + 1/(p²(p²−1)) &nbsp; for every prime p<br>
+      <span class="ann">Summing: S = D₀ + Q. The structure mirrors J = D₀ + T but at the squared level.</span></div>
+    </div>
+  </div>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 6.4 — U = J − S</div>
+    <div class="block-body">
+      <div class="eq">1/(p(p−1)) − 1/(p²−1) = 1/(p(p−1)(p+1)) &nbsp; for every prime p<br>
+      <span class="ann">Summing: U = J − S. U = ∑_p 1/(p(p−1)(p+1)) measures the gap between J and S.</span></div>
+    </div>
+  </div>
+
+  <p>Together, these relations form a lattice. The constants are not independent — they are multiple views of a single arithmetic structure:</p>
+
+  <div class="eq" style="text-align:left; padding-left:40px; line-height:2.4;">
+    J  =  D₀  +  T<br>
+    S  =  D₀  +  Q<br>
+    J  =  S   +  U<br>
+    ──────────────────────<br>
+    <span style="color:var(--cream3); font-size:12px; font-family:var(--serif); font-style:italic;">All three decompose D₀, with T, Q, U as the respective carry terms.</span>
+  </div>
+</div>
+
+<!-- §7 -->
+
+
+<div class="section" id="s7">
+  <div class="sec-n">Section 7</div>
+  <div class="sec-title">Gap Ratio Theorem <span class="pill pill-thm">Proved</span></div>
+  <p>For M = p# (primorial), define A(g, M) = #{r ≤ M : gcd(r,M)=1, gcd(r+g,M)=1}. For even gaps g₁, g₂ with odd prime factors inside M:</p>
+  <div class="eq">A(g₁,M)/A(g₂,M) = ∏<sub>q|g₁,q∤g₂</sub>(q−1)/(q−2) · ∏<sub>q|g₂,q∤g₁</sub>(q−2)/(q−1)<br><span class="ann">Independent of M. In particular A(6,M)/A(2,M) = 2 exactly at every primorial ≥ 6.</span></div>
+  <table class="tbl"><thead><tr><th>M</th><th>A(2,M)</th><th>A(6,M)</th><th>Ratio</th></tr></thead><tbody>
+    <tr><td class="hi">6</td><td>1</td><td>2</td><td class="ok">2.0000 ✓</td></tr>
+    <tr><td class="hi">30</td><td>3</td><td>6</td><td class="ok">2.0000 ✓</td></tr>
+    <tr><td class="hi">210</td><td>15</td><td>30</td><td class="ok">2.0000 ✓</td></tr>
+    <tr><td class="hi">2310</td><td>135</td><td>270</td><td class="ok">2.0000 ✓</td></tr>
+  </tbody></table>
+</div>
+
+<div class="section" id="s8">
+  <div class="sec-n">Section 8</div>
+  <div class="sec-title">φ as Spectral Obstruction <span class="pill pill-alg">Algebraic</span></div>
+  <p>The jump spectrum is {1/(p(p−1)) : p prime}. Recovery formula: p(s) = (1+√(1+4/s))/2.</p>
+  <div class="eq">At s=1: 1+4/s = 5 &nbsp;→&nbsp; p = (1+√5)/2 = φ<br><span class="ann">√5 irrational ⟹ no prime at s=1. φ is the unique irrational obstruction in the spectrum.</span></div>
+  <p>For every real prime p, 1+4/s_p = (2p−1)² — always a perfect square. The golden ratio occupies the one position where this fails.</p>
+</div>
+
+<div class="section" id="s8b">
+  <div class="sec-n">Section 8b</div>
+  <div class="sec-title">F(u) and Möbius <span class="pill pill-thm">Verified</span></div>
+  <p>F(u) is not a Möbius inversion in the technical sense, but the Möbius function μ is embedded in F as its u=1 specialization. The key identity:</p>
+  <div class="eq">∏<sub>p</sub>(1 − u/p²) = Σ<sub>n squarefree</sub> (−u)<sup>ω(n)</sup>/n²<br><span class="ann">where ω(n) = number of distinct prime factors. At u=1: weights (−1)^{ω(n)} = μ(n), so the sum becomes Σμ(n)/n² = 1/ζ(2).</span></div>
+  <p>Therefore F(1) = ζ(2)·(1/ζ(2)) = 1. The normalization is not coincidence — it is a Möbius cancellation. F(u) is a one-parameter family of Dirichlet sums; the Möbius case is u=1.</p>
+</div>
+
+<div class="section" id="s9">
+  <div class="sec-n">Section 9</div>
+  <div class="sec-title">Open Problems <span class="pill pill-open">Unsolved</span></div>
+  <details class="open-probs">
+    <summary>Five open problems — click to expand</summary>
+    <div class="op-inner">
+      <div class="op"><div class="op-n">1.</div><div class="op-body"><strong>Does F appear as an operator?</strong> If det(I−uL)=F(u) for some L on a Hilbert space, primes are eigenvalues. What is L?</div></div>
+      <div class="op"><div class="op-n">2.</div><div class="op-body"><strong>F(u) for complex u.</strong> Growth order, Hadamard product, relation to ζ(s) in the critical strip?</div></div>
+      <div class="op"><div class="op-n">3.</div><div class="op-body"><strong>U ≈ 0.2215 geometrically.</strong> U = J−S = Σ1/(p(p−1)(p+1)). Clear algebraic origin, no geometric meaning in the lift framework yet.</div></div>
+      <div class="op"><div class="op-n">4.</div><div class="op-body"><strong>Σ|E(n,N)| = O(N<sup>1/2+ε</sup>)?</strong> Farey sector error sum. If yes, computational evidence for Franel–Landau RH equivalence.</div></div>
+      <div class="op"><div class="op-n">5.</div><div class="op-body"><strong>F<sup>−1</sup>(1/2) ∈ (2,4).</strong> Does it have arithmetic significance? Connection to Re(s)=1/2?</div></div>
+    </div>
+  </details>
+</div>
+
+<div class="section" id="s10">
+  <div class="sec-n">Section 10</div>
+  <div class="sec-title">Twin Primes in the Lift Framework <span class="pill pill-obs">Observation</span></div>
+
+  <p>The framework has two precise points of contact with twin primes. Neither proves the Twin Prime Conjecture. Both say something exact.</p>
+
+  <div class="block thm">
+    <div class="block-tag">Theorem 10.1 — Exact gap ratios at primorials</div>
+    <div class="block-body">
+      For M = p# with p ≥ 5, the coprime pair counts satisfy:
+      <div class="eq" style="text-align:left;padding-left:28px;line-height:2.4;">
+        A(2, M) = A(4, M) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [twin pairs = cousin pairs, exactly]<br>
+        A(6, M) / A(2, M) = 2 &nbsp;&nbsp;&nbsp; [sexy pairs = twice twin pairs, exactly]
+      </div>
+      The Hardy–Littlewood ratios S(4)/S(2) = 1 and S(6)/S(2) = 2 are usually stated asymptotically. These are exact integer identities at every primorial.
+    </div>
+  </div>
+
+  <div class="proof">
+    <div class="proof-tag">Proof</div>
+    <div class="proof-body">
+      By CRT, A(g, M) = M · ∏<sub>q|M, q|g</sub>(q−1)/q · ∏<sub>q|M, q∤g</sub>(q−2)/q. For g=2 and g=4: both are even, no odd prime divides one but not the other, so every factor is the same — the products are equal. For g=6 vs g=2: only q=3 differs (3|6, 3∤2), contributing (3−1)/3 = 2/3 vs (3−2)/3 = 1/3. Ratio = (2/3)/(1/3) = 2.
+      <span class="qed">□</span>
+    </div>
+  </div>
+
+  <table class="tbl">
+    <thead><tr><th>M</th><th>A(2,M) twin</th><th>A(4,M) cousin</th><th>A(6,M) sexy</th><th>Equal?</th><th>Ratio 6/2</th></tr></thead>
+    <tbody>
+      <tr><td class="hi">30</td><td>3</td><td>3</td><td>6</td><td class="ok">✓</td><td class="ok">2</td></tr>
+      <tr><td class="hi">210</td><td>15</td><td>15</td><td>30</td><td class="ok">✓</td><td class="ok">2</td></tr>
+      <tr><td class="hi">2310</td><td>135</td><td>135</td><td>270</td><td class="ok">✓</td><td class="ok">2</td></tr>
+      <tr><td class="hi">30030</td><td>1485</td><td>1485</td><td>2970</td><td class="ok">✓</td><td class="ok">2</td></tr>
+    </tbody>
+  </table>
+
+  <div class="block rmk">
+    <div class="block-tag">Remark 10.2 — Scope</div>
+    <div class="block-body">
+      Theorem 10.1 shows twin and cousin pairs have equal density at every primorial ring — an exact finite result. It does not imply infinitely many twin primes. That requires survival through all primorials simultaneously, which is precisely the difficulty of the conjecture. The finite result stands on its own.
+    </div>
+  </div>
+</div>
+
+</div></div>
+
+
+<!-- EXPLORER PAGE -->
+<div class="page" id="explorer-page" style="padding-top:52px;">
+
+<div id="wrap" style="padding-top:0!important;">
 <div id="left">
 
   <div class="ps">
@@ -248,6 +759,9 @@ table.rt .prow{background:rgba(200,168,74,.05);}
   <div class="bc" onclick="bcSel(3)"><div class="bc-l">J partial</div><div class="bc-v" id="bc-J" style="color:var(--violet)">—</div><div class="bc-t">→ 0.773126</div></div>
   <div class="bc" onclick="bcSel(4)"><div class="bc-l">D₀ partial</div><div class="bc-v" id="bc-D0" style="color:var(--sky)">—</div><div class="bc-t">→ 0.452217</div></div>
   <div class="bc" onclick="bcSel(5)"><div class="bc-l">T partial</div><div class="bc-v" id="bc-T" style="color:var(--lime)">—</div><div class="bc-t">→ 0.320909</div></div>
+  <div class="bc" onclick="bcSel(9)"><div class="bc-l">S = −F′(1)</div><div class="bc-v" id="bc-S" style="color:var(--lime)">—</div><div class="bc-t">→ 0.551693</div></div>
+  <div class="bc" onclick="bcSel(10)"><div class="bc-l">Q = S−D₀</div><div class="bc-v" id="bc-Q" style="color:#58b8e8">—</div><div class="bc-t">→ 0.099446</div></div>
+  <div class="bc" onclick="bcSel(11)"><div class="bc-l">U = J−S</div><div class="bc-v" id="bc-U" style="color:#e8a840">—</div><div class="bc-t">→ 0.221463</div></div>
   <div class="bc" onclick="bcSel(6)"><div class="bc-l">A(6)/A(2)</div><div class="bc-v" id="bc-gap" style="color:var(--gold)">—</div><div class="bc-t">→ 2 at p#</div></div>
   <div class="bc" onclick="bcSel(7)"><div class="bc-l">ζ(2)·∏(1−2/p²)</div><div class="bc-v" id="bc-zeta" style="color:var(--teal)">—</div><div class="bc-t">→ C identity</div></div>
   <div class="bc" onclick="bcSel(8)"><div class="bc-l">D₀+T vs J</div><div class="bc-v" id="bc-dt" style="color:var(--lime)">—</div><div class="bc-t">error → 0</div></div>
@@ -291,7 +805,81 @@ table.rt .prow{background:rgba(200,168,74,.05);}
   </div>
 </div>
 
+
+</div>
+
+<!-- C(x)/F(u) PAGE -->
+<div class="page" id="cx-page" style="padding-top:52px;">
+  <div style="height:calc(100vh - 52px);display:flex;flex-direction:column;">
+<div class="cx-toolbar">
+      <span class="cx-tl">Primes shown</span>
+      <input type="range" class="sl" id="cx-n" min="5" max="500" value="80" oninput="drawCx()" style="width:140px;">
+      <span class="ctrl-val" id="cx-nv" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:28px;">80</span>
+      <div class="ctrl-sep" style="width:1px;height:20px;background:var(--edge);"></div>
+      <span class="cx-tl">u range for F(u)</span>
+      <input type="range" class="sl" id="fu-max" min="10" max="39" value="38" oninput="drawFu()" style="width:120px;">
+      <span class="ctrl-val" id="fu-maxv" style="font-family:var(--mono);font-size:11px;color:var(--gold);min-width:36px;">3.8</span>
+      <div class="ctrl-sep" style="width:1px;height:20px;background:var(--edge);"></div>
+      <button class="btn on" id="cx-show-j" onclick="toggleCxJ()" style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);background:var(--bg3);border:1px solid var(--gold);padding:5px 10px;cursor:pointer;">J(x)</button>
+      <button class="btn on" id="cx-show-rate" onclick="toggleCxRate()" style="font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);background:var(--bg3);border:1px solid var(--teal);padding:5px 10px;cursor:pointer;">C(x)−C</button>
+    </div>
+    <div class="cx-canvases">
+      <!-- LEFT: C(x) step function + J(x) -->
+      <div class="cx-pane">
+        <div class="cx-pane-title">
+          C(x) = ∏<sub style="font-size:8px">p≤x</sub>(p²−2)/(p²−1)
+          <span id="cx-val">—</span>
+        </div>
+        <canvas class="cx-canvas" id="cx-canvas" height="300"></canvas>
+        <div class="cx-stats">
+          <div class="cx-stat"><div class="cx-sl">C(x) at last prime</div><div class="cx-sv" id="cx-last">—</div></div>
+          <div class="cx-stat"><div class="cx-sl">C(x) − C</div><div class="cx-sv" id="cx-err" style="color:var(--coral)">—</div></div>
+          <div class="cx-stat"><div class="cx-sl">J(x) partial</div><div class="cx-sv" id="cx-J">—</div></div>
+          <div class="cx-stat"><div class="cx-sl">primes included</div><div class="cx-sv" id="cx-np">—</div></div>
+        </div>
+      </div>
+      <!-- RIGHT: F(u) analytic function -->
+      <div class="cx-pane">
+        <div class="cx-pane-title">
+          F(u) = ∏<sub style="font-size:8px">p</sub>(p²−u)/(p²−1)
+          <span id="fu-val">—</span>
+        </div>
+        <canvas class="cx-canvas" id="fu-canvas" height="300"></canvas>
+        <div class="cx-stats">
+          <div class="cx-stat"><div class="cx-sl">F(0) → ζ(2)</div><div class="cx-sv" id="fu-F0" style="color:var(--teal)">—</div></div>
+          <div class="cx-stat"><div class="cx-sl">F(1) = 1 exact</div><div class="cx-sv" id="fu-F1" style="color:var(--lime)">—</div></div>
+          <div class="cx-stat"><div class="cx-sl">F(2) = C</div><div class="cx-sv" id="fu-F2" style="color:var(--gold2)">—</div></div>
+          <div class="cx-stat"><div class="cx-sl">First zero u=4</div><div class="cx-sv" style="color:var(--coral)">= 2²</div></div>
+        </div>
+        <div class="fu-desc">
+          F(u) interpolates: F(0)≈ζ(2)=π²/6 · F(1)=1 exactly · F(2)=C · zeros at u=p² (4,9,25,…)<br>
+          Click the canvas to read F(u) at any u. The curve lives in the Laguerre–Pólya class.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+
+function switchPage(name){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById(name+'-page').classList.add('active');
+  const labels={paper:'Paper',explorer:'Explorer',cx:'C(x)'};
+  [...document.querySelectorAll('.nav-tab')].find(t=>t.textContent.trim().startsWith(labels[name]))?.classList.add('active');
+  const showExp = name==='explorer';
+  ['hd-M','hd-C','hd-phi'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=showExp?'':'none';});
+  // Double rAF so layout is settled before canvas sizing
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(name==='paper') drawLandmark();
+    if(name==='explorer'){drawMain();drawRing();}
+    if(name==='cx'){drawCx();drawFu();}
+  }));
+}
+function switchTab(t){ switchPage(t==='cx'?'cx':'explorer'); }
+
+
 // ═══════════════════════════════════════════════════════════
 // MATH CORE
 // ═══════════════════════════════════════════════════════════
@@ -351,14 +939,12 @@ const PRIMORIALS=[1,2,6,30,210,2310,30030];
 function isPrimorial(m){return PRIMORIALS.includes(m);}
 function isPrimeN(n){return n<=MAX_M+1?IS_PRIME[n]===1:false;}
 
-// Precomputed history — store every M
-// For M>5000, skip A(g,M) to keep it fast
-const H=new Float64Array((MAX_M+1)*6); // [cumPhi, cumLift, J, D0, T, zetaInner]
-// Pack: H[m*6+0]=cumPhi, +1=cumLift, +2=J, +3=D0, +4=T, +5=zetaInner
+// 9 values per M: cumPhi, cumLift, J, D0, T, zetaInner, S, Q, U
+const H=new Float64Array((MAX_M+1)*9);
 const LIFTS=new Int32Array(MAX_M+1);
 const PHIV=new Int32Array(MAX_M+1);
 let computedUpTo=0;
-let cPhi=0,cLift=0,cJ=0,cD0=0,cT=0,cZeta=1;
+let cPhi=0,cLift=0,cJ=0,cD0=0,cT=0,cZeta=1,cS=0,cQ=0,cU=0;
 const PI2_6=Math.PI*Math.PI/6;
 
 function computeRange(from,to){
@@ -372,10 +958,15 @@ function computeRange(from,to){
       cD0+=1/m/m;
       cT+=1/(m*m*(m-1));
       cZeta*=(1-2/m/m);
+      // New constants
+      cS+=1/(m*m-1);           // S = Σ 1/(p²−1) = −F'(1)
+      cQ+=1/(m*m*(m*m-1));     // Q = Σ 1/(p²(p²−1)) = S − D0
+      cU+=1/(m*(m-1)*(m+1));   // U = Σ 1/(p(p−1)(p+1)) = J − S
     }
-    H[m*6+0]=cPhi; H[m*6+1]=cLift;
-    H[m*6+2]=cJ;   H[m*6+3]=cD0;
-    H[m*6+4]=cT;   H[m*6+5]=cZeta;
+    H[m*9+0]=cPhi; H[m*9+1]=cLift;
+    H[m*9+2]=cJ;   H[m*9+3]=cD0;
+    H[m*9+4]=cT;   H[m*9+5]=cZeta;
+    H[m*9+6]=cS;   H[m*9+7]=cQ;   H[m*9+8]=cU;
   }
   computedUpTo=to;
 }
@@ -448,8 +1039,34 @@ const RATIOS=[
   {key:'D0T',   name:'|J − (D₀+T)|',             desc:'identity error → 0', color:'#c870a0',target:0,on:false,
    formula:'|J − (D₀ + T)|',
    eq:'J = D₀ + T  ⟺  ∑1/(p(p−1)) = ∑1/p² + ∑1/(p²(p−1))',
-   proof:'For each prime p: 1/(p(p−1)) − 1/p² − 1/(p²(p−1)) = [(p−1) − (p−1) − 1 + 1]/(p²(p−1)) = 0. So the error is identically zero at every prime and at every partial sum. The plot should show a flat line at 0.',
-   full:'This is an algebraic identity. The error |J−(D₀+T)| should be exactly 0 (up to floating-point rounding, ~10⁻¹⁵). If you see any non-zero values, they are floating-point artifacts, not mathematical errors.'},
+   proof:'For each prime p: 1/(p(p−1)) − 1/p² − 1/(p²(p−1)) = 0. Algebraic identity, holds term by term.',
+   full:'The error |J−(D₀+T)| should be exactly 0 up to floating-point rounding (~10⁻¹⁵). This is an algebraic identity, not a numerical observation.'},
+  // ── NEW CONSTANTS ──
+  {key:'S',     name:'S = Σ 1/(p²−1)',             desc:'→ 0.551693183 = −F′(1)', color:'#7ec85a',target:0.551693183169,on:false,
+   formula:'S = Σ_{p prime, p≤M} 1/(p²−1)',
+   eq:'S = ∑_p 1/(p²−1) = ∑_p 1/((p−1)(p+1))  ≈  0.551693183169550',
+   proof:'S arises as the negative of the derivative of F(u) at u=1. Since log F(u) = ∑_p log((p²−u)/(p²−1)), differentiating: F′(u)/F(u) = −∑_p 1/(p²−u). At u=1: F′(1) = F(1)·(−∑_p 1/(p²−1)) = −S since F(1)=1.',
+   full:'S = −F′(1) is the slope of the analytic lift function at its unique normalization point. It satisfies S = D₀ + Q, the same algebraic structure as J = D₀ + T but at the squared level.'},
+  {key:'Q',     name:'Q = Σ 1/(p²(p²−1))',         desc:'→ 0.099445878 = S−D₀',  color:'#58b8e8',target:0.099445877615,on:false,
+   formula:'Q = Σ_{p prime, p≤M} 1/(p²(p²−1))',
+   eq:'Q = ∑_p 1/(p²(p²−1))  ≈  0.099445877615934',
+   proof:'From the identity 1/(p²−1) = 1/p² + 1/(p²(p²−1)): summing over all primes gives S = D₀ + Q, so Q = S − D₀. The identity holds term by term.',
+   full:'Q is the second-level carry term, analogous to T in J = D₀ + T. It measures the gap between S and the prime zeta function D₀.'},
+  {key:'U',     name:'U = Σ 1/(p(p−1)(p+1))',       desc:'→ 0.221463371 = J−S',   color:'#e8a840',target:0.221463371392,on:false,
+   formula:'U = Σ_{p prime, p≤M} 1/(p(p−1)(p+1))',
+   eq:'U = ∑_p 1/(p(p−1)(p+1))  ≈  0.221463371392699',
+   proof:'From partial fractions: 1/(p(p−1)) − 1/(p²−1) = 1/(p−1)·[1/p − 1/(p+1)] = 1/(p(p−1)(p+1)). Summing: U = J − S.',
+   full:'U measures the gap between J (total jump content) and S (slope magnitude at normalization). Its algebraic origin is clear; its geometric meaning in the lift framework is an open question.'},
+  {key:'SeqD0Q',name:'|S − (D₀+Q)|',               desc:'identity S=D₀+Q → 0',   color:'#7ec85a',target:0,on:false,
+   formula:'|S − (D₀ + Q)|',
+   eq:'S = D₀ + Q  ⟺  ∑1/(p²−1) = ∑1/p² + ∑1/(p²(p²−1))',
+   proof:'For each prime p: 1/(p²−1) − 1/p² − 1/(p²(p²−1)) = (p² − (p²−1) − 1)/(p²(p²−1)) = 0. Algebraic identity.',
+   full:'Mirrors J=D₀+T exactly one level up. S, like J, decomposes into D₀ (the prime zeta term) plus a carry term Q.'},
+  {key:'JeqSU', name:'|J − (S+U)|',                 desc:'identity J=S+U → 0',     color:'#e8a840',target:0,on:false,
+   formula:'|J − (S + U)|',
+   eq:'J = S + U  ⟺  ∑1/(p(p−1)) = ∑1/(p²−1) + ∑1/(p(p−1)(p+1))',
+   proof:'For each prime p: 1/(p(p−1)) − 1/(p²−1) − 1/(p(p−1)(p+1)) = 0. Algebraic identity, holds term by term.',
+   full:'The three identities J=D₀+T, S=D₀+Q, J=S+U form a closed lattice. Every constant is determined by any two others.'},
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -460,7 +1077,8 @@ let activeRatioKey=null;
 
 function getV(m, key){
   if(m>computedUpTo||m<1) return NaN;
-  const cPhi=H[m*6+0],cLift=H[m*6+1],J=H[m*6+2],D0=H[m*6+3],T=H[m*6+4],zi=H[m*6+5];
+  const cPhi=H[m*9+0],cLift=H[m*9+1],J=H[m*9+2],D0=H[m*9+3],T=H[m*9+4],zi=H[m*9+5];
+  const S=H[m*9+6],Q=H[m*9+7],U=H[m*9+8];
   const phi=PHIV[m], lft=LIFTS[m];
   switch(key){
     case 'cumC':   return cLift/cPhi;
@@ -469,6 +1087,12 @@ function getV(m, key){
     case 'J':      return J;
     case 'D0':     return D0;
     case 'T':      return T;
+    case 'S':      return S;
+    case 'Q':      return Q;
+    case 'U':      return U;
+    case 'JeqD0T': return Math.abs(J-(D0+T));
+    case 'SeqD0Q': return Math.abs(S-(D0+Q));
+    case 'JeqSU':  return Math.abs(J-(S+U));
     case 'a6a2':   {const a6=cpairs(6,m),a2=cpairs(2,m);return(a6!==null&&a2)?a6/a2:NaN;}
     case 'a4a2':   {const a4=cpairs(4,m),a2=cpairs(2,m);return(a4!==null&&a2)?a4/a2:NaN;}
     case 'zetaC':  return PI2_6*zi;
@@ -572,7 +1196,8 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePopup(); });
 function drawMain(){
   const canvas=document.getElementById('mc');
   const wrap=document.getElementById('mcw');
-  const W=wrap.clientWidth||800, H=wrap.clientHeight||380;
+  const W=Math.max(wrap.clientWidth||0,10), H=Math.max(wrap.clientHeight||0,10);
+  if(wrap.clientWidth<=0) return;
   const dpr2=Math.min(window.devicePixelRatio||1,3);
   canvas.width=W*dpr2; canvas.height=H*dpr2;
   const ctx=canvas.getContext('2d'); ctx.scale(dpr2,dpr2);
@@ -659,13 +1284,14 @@ function drawMain(){
 function drawRing(){
   const canvas=document.getElementById('rc');
   const wrap=document.getElementById('rw');
-  const W=(wrap.clientWidth-160)||300, H=wrap.clientHeight||240;
+  const W=Math.max(wrap.clientWidth-160, 100), H=Math.max(wrap.clientHeight, 100);
+  if(W<=0||H<=0) return;
   const dpr2=Math.min(window.devicePixelRatio||1,3);
   canvas.width=W*dpr2;canvas.height=H*dpr2;
   const ctx=canvas.getContext('2d');ctx.scale(dpr2,dpr2);
   ctx.fillStyle='#07070b';ctx.fillRect(0,0,W,H);
 
-  const m=M, cx=W/2, cy=H/2, R=Math.min(W,H)*.41;
+  const m=M, cx=W/2, cy=H/2, R=Math.max(Math.min(W,H)*.41, 10);
   ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=1;ctx.stroke();
   ctx.beginPath();ctx.arc(cx,cy,R*.7,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.03)';ctx.stroke();
 
@@ -716,7 +1342,8 @@ function updateDisplay(){
   prec=+document.getElementById('prec-sel').value;
   if(computedUpTo<M) return;
   const phi=PHIV[M], lft=LIFTS[M];
-  const cPhi=H[M*6+0],cLift=H[M*6+1],J=H[M*6+2],D0=H[M*6+3],T=H[M*6+4],zi=H[M*6+5];
+  const cPhi=H[M*9+0],cLift=H[M*9+1],J=H[M*9+2],D0=H[M*9+3],T=H[M*9+4],zi=H[M*9+5];
+  const S=H[M*9+6],Q=H[M*9+7],U=H[M*9+8];
   const cumC=cLift/cPhi;
   const a2=M<=5000?cpairs(2,M):null, a6=M<=5000?cpairs(6,M):null, a4=M<=5000?cpairs(4,M):null;
   const a6a2=a2&&a6?a6/a2:NaN;
@@ -748,6 +1375,9 @@ function updateDisplay(){
   document.getElementById('bc-J').textContent=f(J);
   document.getElementById('bc-D0').textContent=f(D0);
   document.getElementById('bc-T').textContent=f(T);
+  document.getElementById('bc-S').textContent=f(S);
+  document.getElementById('bc-Q').textContent=f(Q);
+  document.getElementById('bc-U').textContent=f(U);
   document.getElementById('bc-gap').textContent=!isNaN(a6a2)?f(a6a2,6):'—';
   document.getElementById('bc-zeta').textContent=f(PI2_6*zi);
   document.getElementById('bc-dt').textContent=Math.abs(J-(D0+T)).toExponential(4);
@@ -772,7 +1402,7 @@ function updateDisplay(){
 
 function addTableRow(m){
   const phi=PHIV[m], lft=LIFTS[m];
-  const cLift=H[m*6+1],cPhi=H[m*6+0],J=H[m*6+2];
+  const cLift=H[m*9+1],cPhi=H[m*9+0],J=H[m*9+2];
   const cumC=cLift/cPhi;
   const a2=m<=2000?cpairs(2,m):null, a6=m<=2000?cpairs(6,m):null;
   const a6a2=a2&&a6?a6/a2:NaN;
@@ -831,14 +1461,206 @@ function setSpeed(ms){
 function bcSel(i){document.querySelectorAll('.bc').forEach((c,j)=>c.classList.toggle('active',j===i));}
 
 // ═══════════════════════════════════════════════════════════
+// TAB SWITCHING (handled by switchPage above)
+// ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+// C(x) CANVAS — step function + J(x) overlay
+// ═══════════════════════════════════════════════════════════
+let cx_showJ=true, cx_showRate=true;
+function toggleCxJ(){cx_showJ=!cx_showJ;document.getElementById('cx-show-j').style.opacity=cx_showJ?1:.35;drawCx();}
+function toggleCxRate(){cx_showRate=!cx_showRate;document.getElementById('cx-show-rate').style.opacity=cx_showRate?1:.35;drawCx();}
+
+const PLIST=(function(){
+  const s=new Uint8Array(5000).fill(1);s[0]=s[1]=0;
+  for(let i=2;i*i<5000;i++) if(s[i]) for(let j=i*i;j<5000;j+=i) s[j]=0;
+  const p=[];for(let i=2;i<5000;i++) if(s[i]) p.push(i);return p;
+})();
+const C_TRUE=(()=>{let p=1;for(const q of PLIST) p*=(q*q-2)/(q*q-1);return p;})();
+
+function drawCx(){
+  const n=Math.min(+document.getElementById('cx-n').value,PLIST.length);
+  document.getElementById('cx-nv').textContent=n;
+  const primes=PLIST.slice(0,n);
+  const canvas=document.getElementById('cx-canvas');
+  const W=canvas.clientWidth||400,H=canvas.clientHeight||300;
+  const dpr2=Math.min(window.devicePixelRatio||1,3);
+  canvas.width=W*dpr2;canvas.height=H*dpr2;
+  const ctx=canvas.getContext('2d');ctx.scale(dpr2,dpr2);
+  ctx.fillStyle='#07070b';ctx.fillRect(0,0,W,H);
+  const Cx=[],Jx=[],xs=[];
+  let cx=1,jx=0;
+  for(const p of primes){cx*=(p*p-2)/(p*p-1);jx+=1/(p*(p-1));Cx.push(cx);Jx.push(jx);xs.push(p);}
+  const pad={l:54,r:24,t:18,b:30},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const maxX=xs[xs.length-1];
+  const minV=0.3,maxV=Math.max(Jx[Jx.length-1]*1.08,0.85);
+  function px(x){return pad.l+(x/maxX)*cw;}
+  function py(v){return pad.t+(1-(v-minV)/(maxV-minV))*ch;}
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+  [C_TRUE,0.4522,0.6079,0.7731,1.0].forEach(v=>{
+    if(v<minV||v>maxV)return;
+    ctx.beginPath();ctx.moveTo(pad.l,py(v));ctx.lineTo(pad.l+cw,py(v));ctx.stroke();
+    const lbl={[C_TRUE]:'C',[0.4522]:'D₀',[0.6079]:'6/π²',[0.7731]:'J',[1.0]:'1'}[v]||v.toFixed(3);
+    ctx.fillStyle='rgba(255,255,255,.24)';ctx.font='8.5px JetBrains Mono,monospace';ctx.fillText(lbl,2,py(v)+3);
+  });
+  // C_true ref
+  ctx.beginPath();ctx.moveTo(pad.l,py(C_TRUE));ctx.lineTo(pad.l+cw,py(C_TRUE));
+  ctx.strokeStyle='rgba(234,203,106,.3)';ctx.setLineDash([3,6]);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#eacb6a';ctx.font='9px JetBrains Mono,monospace';
+  ctx.fillText('C = '+C_TRUE.toFixed(10),pad.l+4,py(C_TRUE)-5);
+  // C(x) step function
+  ctx.beginPath();
+  let prevX=0,prevCx=1;
+  Cx.forEach((c,i)=>{
+    const x=px(xs[i]),y=py(c);
+    ctx.moveTo(px(prevX),py(prevCx));ctx.lineTo(x,py(prevCx));ctx.lineTo(x,y);
+    prevX=xs[i];prevCx=c;
+  });
+  ctx.strokeStyle='#eacb6a';ctx.lineWidth=1.5;ctx.stroke();
+  // C(x)-C error
+  if(cx_showRate){
+    const eMin=Math.min(...Cx.map(c=>c-C_TRUE)),eMax=Math.max(...Cx.map(c=>c-C_TRUE));
+    // Draw on secondary scale in lower portion
+    ctx.beginPath();
+    Cx.forEach((c,i)=>{
+      const err=c-C_TRUE;
+      const yy=pad.t+ch*0.65+(-err/eMax)*ch*0.3;
+      i===0?ctx.moveTo(px(xs[i]),yy):ctx.lineTo(px(xs[i]),yy);
+    });
+    ctx.strokeStyle='#e05060';ctx.lineWidth=1.2;ctx.globalAlpha=.75;ctx.stroke();ctx.globalAlpha=1;
+    ctx.fillStyle='#e05060';ctx.font='8px JetBrains Mono,monospace';
+    ctx.fillText('C(x)−C (scaled)',pad.l+2,pad.t+ch*0.65+8);
+  }
+  // J(x)
+  if(cx_showJ){
+    ctx.beginPath();
+    Jx.forEach((j,i)=>{
+      const x=px(xs[i]),y=py(j);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='#9070d8';ctx.lineWidth=1.5;ctx.stroke();
+  }
+  // X labels
+  if(n<=30){xs.forEach(p=>{ctx.fillStyle='rgba(234,203,106,.4)';ctx.font='8px JetBrains Mono,monospace';ctx.fillText(p,px(p)-4,pad.t+ch+14);});}
+  else{[50,100,200,300,500,1000,2000,3000].forEach(v=>{if(v<=maxX){ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='8px JetBrains Mono,monospace';ctx.fillText(v>=1000?v/1000+'k':v,px(v)-6,pad.t+ch+14);}});}
+  // Legend
+  ctx.font='9.5px JetBrains Mono,monospace';
+  ctx.fillStyle='#eacb6a';ctx.fillRect(pad.l,6,14,2);ctx.fillText('C(x)',pad.l+17,12);
+  if(cx_showJ){ctx.fillStyle='#9070d8';ctx.fillRect(pad.l+55,6,14,2);ctx.fillText('J(x)',pad.l+72,12);}
+  if(cx_showRate){ctx.fillStyle='#e05060';ctx.fillRect(pad.l+110,6,14,2);ctx.fillText('C(x)−C',pad.l+127,12);}
+  const lastCx=Cx[Cx.length-1],lastJx=Jx[Jx.length-1];
+  document.getElementById('cx-last').textContent=lastCx.toFixed(12);
+  document.getElementById('cx-err').textContent=(lastCx-C_TRUE).toExponential(6);
+  document.getElementById('cx-J').textContent=lastJx.toFixed(12);
+  document.getElementById('cx-np').textContent=n;
+  document.getElementById('cx-val').textContent=lastCx.toFixed(8);
+}
+
+// ═══════════════════════════════════════════════════════════
+// F(u) CANVAS
+// ═══════════════════════════════════════════════════════════
+function computeFu(u,np=350){
+  let prod=1;
+  for(let i=0;i<Math.min(np,PLIST.length);i++){
+    const p=PLIST[i],f=(p*p-u)/(p*p-1);
+    if(f<=0)return 0;
+    prod*=f;
+  }
+  return prod;
+}
+
+function drawFu(hoverU){
+  const fuMax=+document.getElementById('fu-max').value/10;
+  document.getElementById('fu-maxv').textContent=fuMax.toFixed(1);
+  const canvas=document.getElementById('fu-canvas');
+  const W=canvas.clientWidth||400,H=canvas.clientHeight||300;
+  const dpr2=Math.min(window.devicePixelRatio||1,3);
+  canvas.width=W*dpr2;canvas.height=H*dpr2;
+  const ctx=canvas.getContext('2d');ctx.scale(dpr2,dpr2);
+  ctx.fillStyle='#07070b';ctx.fillRect(0,0,W,H);
+  const pad={l:54,r:24,t:18,b:30},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const F0=computeFu(0,350);
+  const maxV=F0*1.05;
+  function px(u){return pad.l+(u/fuMax)*cw;}
+  function py(v){return pad.t+(1-v/maxV)*ch;}
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+  [0,C_TRUE,1.0,Math.PI*Math.PI/6].forEach(v=>{
+    if(v<0||v>maxV)return;
+    const y=py(v);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();
+    const lbl={[C_TRUE]:'C',[1]:'1',[Math.PI*Math.PI/6]:'ζ(2)'}[v]||(v===0?'0':v.toFixed(2));
+    ctx.fillStyle='rgba(255,255,255,.24)';ctx.font='8.5px JetBrains Mono,monospace';ctx.fillText(lbl,2,y+3);
+  });
+  // Zero markers at u=p²
+  [4,9,25,49].forEach(z=>{
+    if(z>fuMax)return;
+    const x=px(z);
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ch);
+    ctx.strokeStyle='rgba(224,80,96,.2)';ctx.setLineDash([2,5]);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(224,80,96,.55)';ctx.font='8px JetBrains Mono,monospace';
+    ctx.fillText(Math.sqrt(z).toFixed(0)+'²',x+3,pad.t+10);
+  });
+  // Key points
+  [{u:0,lbl:'F(0)=ζ(2)',col:'#3dc8b8'},{u:1,lbl:'F(1)=1',col:'#80c860'},{u:2,lbl:'F(2)=C',col:'#eacb6a'}].forEach(({u,lbl,col})=>{
+    if(u>fuMax)return;
+    const v=computeFu(u,350),x=px(u);
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ch);
+    ctx.strokeStyle=col+'33';ctx.stroke();
+    ctx.beginPath();ctx.arc(x,py(v),5,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+    ctx.fillStyle=col;ctx.font='8.5px JetBrains Mono,monospace';ctx.fillText(lbl,x+7,py(v)-3);
+  });
+  // F(u) curve
+  const grad=ctx.createLinearGradient(pad.l,0,pad.l+cw,0);
+  grad.addColorStop(0,'#3dc8b8');grad.addColorStop(0.5,'#eacb6a');grad.addColorStop(1,'#e05060');
+  ctx.beginPath();let started=false;
+  for(let ui=0;ui<=fuMax;ui+=fuMax/400){
+    const v=computeFu(ui,300);
+    if(v<=0||!isFinite(v)){started=false;continue;}
+    const x=px(ui),y=py(v);
+    if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle=grad;ctx.lineWidth=2.5;ctx.stroke();
+  // Hover
+  if(hoverU!==undefined&&hoverU>=0&&hoverU<=fuMax){
+    const v=computeFu(hoverU,350),x=px(hoverU),y=py(v);
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ch);
+    ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.stroke();
+    if(v>0){ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();}
+    ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='10px JetBrains Mono,monospace';
+    ctx.fillText(`u=${hoverU.toFixed(3)}  F(u)=${v.toFixed(10)}`,pad.l+4,pad.t+15);
+    document.getElementById('fu-val').textContent=`F(${hoverU.toFixed(3)}) = ${v.toFixed(12)}`;
+  }
+  document.getElementById('fu-F0').textContent=F0.toFixed(10);
+  document.getElementById('fu-F1').textContent=computeFu(1,400).toFixed(15);
+  document.getElementById('fu-F2').textContent=computeFu(2,400).toFixed(12);
+}
+
+// F(u) hover listener
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    const fc=document.getElementById('fu-canvas');
+    if(!fc)return;
+    function fuMouse(e){
+      const rect=fc.getBoundingClientRect();
+      if(!rect.width)return;
+      const fuMax=+document.getElementById('fu-max').value/10;
+      drawFu((e.clientX-rect.left)/rect.width*fuMax);
+    }
+    fc.addEventListener('mousemove',fuMouse);
+    fc.addEventListener('click',fuMouse);
+    fc.addEventListener('mouseleave',()=>drawFu());
+  },2000);
+});
+
+// ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('load',()=>{
   buildRatioList();
   precompute(()=>{
-    // Precompute done
     M=30;
-    // Seed table with first 30
     for(let m=1;m<=30;m++) addTableRow(m);
     updateDisplay();
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -846,7 +1668,92 @@ window.addEventListener('load',()=>{
     }));
   });
 });
-window.addEventListener('resize',()=>{drawMain();drawRing();},{passive:true});
+window.addEventListener('resize',()=>{
+  const active=document.querySelector('.tab-panel.active')?.id;
+  if(active==='tab-cx'){drawCx();drawFu();}else{drawMain();drawRing();}
+},{passive:true});
+
+
+function drawLandmark(){
+  const canvas=document.getElementById('landmark-canvas');
+  if(!canvas||!canvas.clientWidth) return;
+  const W=canvas.clientWidth,H=canvas.clientHeight||200;
+  const dpr2=Math.min(window.devicePixelRatio||1,3);
+  canvas.width=W*dpr2;canvas.height=H*dpr2;
+  const ctx=canvas.getContext('2d');ctx.scale(dpr2,dpr2);
+  ctx.fillStyle='#08080f';ctx.fillRect(0,0,W,H);
+  const sv=new Uint8Array(200).fill(1);sv[0]=sv[1]=0;
+  for(let i=2;i*i<200;i++) if(sv[i]) for(let j=i*i;j<200;j+=i) sv[j]=0;
+  const pr=[];for(let i=2;i<200;i++) if(sv[i]) pr.push(i);
+  function Fv(u){let prod=1;for(const q of pr){const f=(q*q-u)/(q*q-1);if(f<=0)return 0;prod*=f;}return prod;}
+  const pad={l:46,r:14,t:20,b:28},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const uMax=4.5,vMax=1.85;
+  function px(u){return pad.l+(u/uMax)*cw;}
+  function py(v){return pad.t+(1-v/vMax)*ch;}
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+  [0,.5,1,1.5].forEach(v=>{
+    ctx.beginPath();ctx.moveTo(pad.l,py(v));ctx.lineTo(pad.l+cw,py(v));ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.22)';ctx.font='8px JetBrains Mono,monospace';
+    ctx.fillText(v===0?'0':v.toFixed(1),2,py(v)+3);
+  });
+  ctx.beginPath();ctx.moveTo(px(4),pad.t);ctx.lineTo(px(4),pad.t+ch);
+  ctx.strokeStyle='rgba(224,80,96,.25)';ctx.setLineDash([2,5]);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(224,80,96,.5)';ctx.font='8px JetBrains Mono,monospace';
+  ctx.fillText('u=4=2\u00B2',px(4)+3,pad.t+9);
+  const gr=ctx.createLinearGradient(pad.l,0,px(4),0);
+  gr.addColorStop(0,'#3dc8b8');gr.addColorStop(.25,'#e8cb6a');
+  gr.addColorStop(.7,'#9070d8');gr.addColorStop(1,'rgba(224,80,96,.25)');
+  ctx.beginPath();let st=false;
+  for(let ui=0;ui<=3.99;ui+=0.02){
+    const v=Fv(ui);if(v<=0||!isFinite(v)){st=false;continue;}
+    const x=px(ui),y=py(v);
+    if(!st){ctx.moveTo(x,y);st=true;}else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle=gr;ctx.lineWidth=2.5;ctx.stroke();
+  [{u:0,lbl:'F(0)=\u03B6(2)',col:'#3dc8b8'},{u:1,lbl:'F(1)=1',col:'#e8cb6a'},{u:2,lbl:'F(2)=C',col:'#9070d8'},{u:4,lbl:'F(4)=0',col:'#e05060'}].forEach(({u,lbl,col})=>{
+    const v=u===4?0:Fv(u);
+    ctx.beginPath();ctx.arc(px(u),py(v),4.5,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+    ctx.fillStyle=col;ctx.font='8.5px JetBrains Mono,monospace';
+    ctx.fillText(lbl,px(u)+(u<3?7:-60),py(v)-(u===4?-14:7));
+  });
+  [0,1,2,3,4].forEach(u=>{
+    ctx.fillStyle='rgba(255,255,255,.28)';ctx.font='8.5px JetBrains Mono,monospace';
+    ctx.fillText(u,px(u)-3,pad.t+ch+14);
+  });
+}
+
+
+window.addEventListener('load',()=>{
+  buildRatioList();
+  precompute(()=>{
+    M=30;
+    for(let m=1;m<=30;m++) addTableRow(m);
+    updateDisplay();
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      drawLandmark(); drawMain(); drawRing(); buildClabels();
+    }));
+  });
+  setTimeout(()=>{
+    const fc=document.getElementById('fu-canvas');
+    if(!fc) return;
+    function fuMouse(e){
+      const r=fc.getBoundingClientRect();
+      if(!r.width) return;
+      const fuMax=+document.getElementById('fu-max').value/10;
+      drawFu((e.clientX-r.left)/r.width*fuMax);
+    }
+    fc.addEventListener('mousemove',fuMouse);
+    fc.addEventListener('click',fuMouse);
+    fc.addEventListener('mouseleave',()=>drawFu());
+  },3000);
+});
+window.addEventListener('resize',()=>{
+  const act=document.querySelector('.page.active')?.id;
+  if(act==='paper-page') drawLandmark();
+  else if(act==='explorer-page'){drawMain();drawRing();}
+  else if(act==='cx-page'){drawCx();drawFu();}
+},{passive:true});
+
 </script>
 </body>
-</html>
+    </html>
