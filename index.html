@@ -2,1589 +2,851 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>The Master Key — C and C(x) · Wessen Getachew · 2026</title>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lift Survival — Ratio Explorer</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
 :root{
-  --void:#06060a;--deep:#0c0c12;--panel:rgba(10,10,16,.96);
-  --edge:rgba(255,255,255,.07);--edge2:rgba(255,255,255,.03);
-  --cream:#e8dfc8;--cream2:#c8bea8;--cream3:#8a7e6e;--cream4:#3a342a;
-  --gold:#c8a84a;--gold2:rgba(200,168,74,.12);--gold3:rgba(200,168,74,.05);
-  --teal:#2ab8a8;--teal2:rgba(42,184,168,.1);
-  --coral:#d85545;--violet:#9966cc;
-  --serif:'EB Garamond',Georgia,serif;--mono:'JetBrains Mono',monospace;
+  --bg:#07070b;--bg1:#0c0c14;--bg2:#111119;--bg3:#191924;
+  --edge:rgba(255,255,255,.07);--edge2:rgba(255,255,255,.14);
+  --gold:#c8a84a;--gold2:#eacb6a;--teal:#3dc8b8;--coral:#e05060;
+  --violet:#9070d8;--lime:#80c860;--sky:#4898e8;--orange:#e8904a;
+  --cream:rgba(255,255,255,.92);--cream2:rgba(255,255,255,.62);--cream3:rgba(255,255,255,.32);
+  --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;--disp:'Cormorant Garamond',serif;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{font-size:16px;background:var(--void);}
-body{background:var(--void);color:var(--cream);font-family:var(--serif);min-height:100vh;overflow-x:hidden;}
-::-webkit-scrollbar{width:3px;}
-::-webkit-scrollbar-thumb{background:var(--cream4);}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--cream);font-family:var(--sans);overflow-x:hidden;}
 
-body::before{
-  content:'';position:fixed;inset:0;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events:none;z-index:9999;opacity:.4;
-}
+/* ── HEADER ── */
+#hd{position:fixed;top:0;left:0;right:0;height:52px;background:rgba(7,7,11,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--edge);display:flex;align-items:center;padding:0 24px;gap:16px;z-index:200;}
+.hd-title{font-family:var(--disp);font-size:1.1rem;font-weight:300;color:var(--gold);letter-spacing:.08em;white-space:nowrap;}
+.hd-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.hd-pill{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);background:rgba(200,168,74,.1);border:1px solid rgba(200,168,74,.22);padding:4px 10px;white-space:nowrap;}
+#compute-bar{font-family:var(--mono);font-size:9px;color:var(--cream3);letter-spacing:.1em;}
 
-/* ── OPENER OVERLAY ── */
-#opener{
-  position:fixed;inset:0;z-index:1000;
-  background:var(--void);
-  display:flex;flex-direction:column;
-  transition:opacity .5s ease;
-}
-#opener.hidden{opacity:0;pointer-events:none;}
-#opener-canvas{display:block;width:100%;height:100%;position:absolute;inset:0;}
+/* ── LAYOUT ── */
+#wrap{padding-top:52px;display:grid;grid-template-columns:280px 1fr;min-height:100vh;}
+#left{grid-row:1/2;background:var(--bg1);border-right:1px solid var(--edge);display:flex;flex-direction:column;overflow-y:auto;height:calc(100vh - 52px);position:sticky;top:52px;}
+#right{display:flex;flex-direction:column;overflow:hidden;}
 
-#opener-ui{
-  position:relative;z-index:10;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  height:100%;pointer-events:none;
-  gap:0;
-}
-#opener-text{
-  text-align:center;padding:0 40px;
-  transition:opacity .4s ease;
-}
-#opener-text.hidden{opacity:0;}
-.opener-eyebrow{
-  font-family:var(--mono);font-size:8px;letter-spacing:.32em;
-  text-transform:uppercase;color:var(--gold);opacity:.7;margin-bottom:18px;
-}
-.opener-title{
-  font-family:var(--serif);font-size:clamp(2rem,6vw,5rem);
-  font-weight:400;font-style:italic;color:var(--cream);
-  line-height:1.06;letter-spacing:-.015em;margin-bottom:10px;
-}
-.opener-title em{color:var(--gold);}
-.opener-sub{
-  font-family:var(--mono);font-size:9px;color:var(--cream3);
-  letter-spacing:.14em;line-height:1.9;margin-top:14px;
-}
+/* ── LEFT ── */
+.ps{padding:18px 18px 14px;border-bottom:1px solid var(--edge);}
+.ps-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream3);margin-bottom:12px;}
+.mod-big{font-family:var(--disp);font-size:2.8rem;font-weight:300;color:var(--gold2);line-height:1;text-align:center;letter-spacing:.04em;}
+.mod-sub{font-family:var(--mono);font-size:8px;color:var(--cream3);text-align:center;letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
+input[type=range].sl{width:100%;accent-color:var(--gold);height:4px;cursor:pointer;margin:10px 0 4px;}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.btn{flex:1;min-width:36px;padding:6px 4px;text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--cream3);background:var(--bg3);border:1px solid var(--edge);cursor:pointer;transition:all .15s;}
+.btn:hover,.btn.on{color:var(--gold);border-color:var(--gold);background:rgba(200,168,74,.07);}
+.btn.primary{border-color:var(--gold);color:var(--gold);}
 
-/* constant popup cards */
-#const-cards{
-  position:absolute;inset:0;pointer-events:none;z-index:11;
-}
-.ccard{
-  position:absolute;
-  background:rgba(10,10,16,.88);
-  border:1px solid rgba(200,168,74,.25);
-  backdrop-filter:blur(12px);
-  padding:10px 14px;
-  font-family:var(--mono);
-  border-radius:2px;
-  opacity:0;
-  transform:scale(.92) translateY(6px);
-  transition:opacity .4s ease, transform .4s ease;
-  pointer-events:none;
-  min-width:160px;
-  box-shadow:0 8px 32px rgba(0,0,0,.5);
-}
-.ccard.show{opacity:1;transform:scale(1) translateY(0);}
-.ccard-label{font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream3);margin-bottom:5px;}
-.ccard-val{font-size:11px;color:var(--gold);letter-spacing:.04em;}
-.ccard-sub{font-size:7.5px;color:var(--cream3);margin-top:3px;}
+/* ── PRECISION ROW ── */
+.prec-row{display:flex;align-items:center;gap:8px;padding:10px 18px;border-bottom:1px solid var(--edge);}
+.prec-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--cream3);}
+select.prec-sel{background:var(--bg3);color:var(--gold);border:1px solid var(--edge);padding:4px 8px;font-family:var(--mono);font-size:10px;flex:1;}
 
-/* opener bottom controls */
-#opener-controls{
-  position:absolute;bottom:28px;left:0;right:0;
-  display:flex;align-items:center;justify-content:center;gap:14px;
-  z-index:12;flex-wrap:wrap;padding:0 20px;
-}
-.op-btn{
-  background:rgba(10,10,16,.7);
-  border:1px solid rgba(200,168,74,.3);
-  color:var(--cream3);font-family:var(--mono);font-size:8px;
-  padding:7px 18px;border-radius:2px;cursor:pointer;
-  letter-spacing:.12em;text-transform:uppercase;
-  transition:all .15s;backdrop-filter:blur(8px);
-}
-.op-btn:hover{border-color:var(--gold);color:var(--gold);}
-.op-btn.primary{border-color:var(--gold);color:var(--gold);background:rgba(200,168,74,.08);}
-.op-btn.teal{border-color:rgba(42,184,168,.4);color:var(--teal);background:rgba(42,184,168,.05);}
-.op-btn.small{font-size:7px;padding:5px 12px;opacity:.7;}
-.op-btn.small:hover{opacity:1;}
+/* ── RATIO LIST ── */
+.ratio-list{display:flex;flex-direction:column;gap:4px;padding:14px 18px;flex:1;}
+.ri{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--bg2);border:1px solid var(--edge);cursor:pointer;transition:border-color .15s;user-select:none;}
+.ri:hover{border-color:var(--edge2);}
+.ri.on{border-color:var(--edge2);}
+.ri-sw{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ri-body{flex:1;min-width:0;}
+.ri-name{font-family:var(--mono);font-size:9px;color:var(--cream2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ri-desc{font-family:var(--mono);font-size:7.5px;color:var(--cream3);margin-top:1px;}
+.ri-val{font-family:var(--mono);font-size:10px;font-weight:500;min-width:72px;text-align:right;cursor:pointer;}
+.ri-val:hover{opacity:.7;}
+.ri-chk{font-family:var(--mono);font-size:10px;color:var(--cream3);transition:color .15s;}
+.ri.on .ri-chk{color:var(--gold);}
 
-/* preset pills */
-#preset-bar{
-  position:absolute;top:20px;left:0;right:0;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  z-index:12;flex-wrap:wrap;padding:0 20px;
-}
-.preset-pill{
-  background:rgba(10,10,16,.65);
-  border:1px solid rgba(255,255,255,.08);
-  color:var(--cream3);font-family:var(--mono);font-size:7px;
-  padding:4px 12px;border-radius:20px;cursor:pointer;
-  letter-spacing:.1em;text-transform:uppercase;
-  transition:all .15s;backdrop-filter:blur(6px);
-}
-.preset-pill:hover,.preset-pill.active{
-  border-color:rgba(200,168,74,.4);color:var(--gold);
-  background:rgba(200,168,74,.06);
-}
+/* ── STATS GRID ── */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--edge);}
+.sg-c{background:var(--bg1);padding:10px 12px;}
+.sg-l{font-family:var(--mono);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream3);margin-bottom:3px;}
+.sg-v{font-family:var(--mono);font-size:12px;}
+.prim-badge{display:none;margin:8px 18px 0;padding:7px 12px;background:rgba(200,168,74,.08);border:1px solid rgba(200,168,74,.3);font-family:var(--mono);font-size:9px;color:var(--gold2);text-align:center;letter-spacing:.1em;}
+.prim-badge.show{display:block;}
 
-/* ── HIDDEN-MODE CONTROLS BAR ── */
-#hidden-controls{
-  position:absolute;
-  bottom:72px;left:50%;transform:translateX(-50%);
-  z-index:13;
-  display:none;
-  align-items:center;gap:14px;
-  background:rgba(6,6,10,.75);
-  border:1px solid rgba(200,168,74,.2);
-  backdrop-filter:blur(12px);
-  border-radius:3px;
-  padding:8px 20px;
-  white-space:nowrap;
-}
-#hidden-controls.show{display:flex;}
-.hc-label{font-family:var(--mono);font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream3);}
-.hc-slider{accent-color:var(--gold);height:3px;cursor:pointer;}
-.hc-val{font-family:var(--mono);font-size:8.5px;color:var(--gold);min-width:32px;text-align:right;}
-.hc-sep{width:1px;height:24px;background:var(--edge);}
+/* ── MAIN CANVAS ── */
+#mcw{flex:1;position:relative;overflow:hidden;min-height:380px;}
+#mc{display:block;width:100%;height:100%;}
+.clabels{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:3px;pointer-events:none;}
+.cl{display:flex;align-items:center;gap:6px;background:rgba(7,7,11,.8);padding:3px 8px;font-family:var(--mono);font-size:9px;color:var(--cream2);}
+.cl-sw{width:18px;height:2px;}
 
-/* ── CARD FORMULA MODAL ── */
-#card-modal{
-  position:absolute;inset:0;
-  z-index:50;
-  display:none;align-items:center;justify-content:center;
-  background:rgba(6,6,10,.75);
-  backdrop-filter:blur(8px);
-}
-#card-modal.show{display:flex;}
-.modal-box{
-  background:var(--deep);
-  border:1px solid rgba(200,168,74,.3);
-  border-top:2px solid var(--gold);
-  max-width:520px;width:90%;
-  padding:28px 32px;
-  position:relative;
-  box-shadow:0 24px 64px rgba(0,0,0,.8);
-  animation:fadeup .2s ease;
-}
-.modal-close{
-  position:absolute;top:12px;right:14px;
-  background:transparent;border:none;
-  color:var(--cream3);font-size:18px;cursor:pointer;
-  line-height:1;transition:color .12s;
-}
-.modal-close:hover{color:var(--cream);}
-.modal-sym{
-  font-family:var(--serif);font-size:2.2rem;font-style:italic;
-  margin-bottom:4px;
-}
-.modal-val{
-  font-family:var(--mono);font-size:11px;letter-spacing:.04em;
-  margin-bottom:6px;
-}
-.modal-formula{
-  font-family:var(--mono);font-size:10px;
-  color:var(--teal);
-  background:rgba(42,184,168,.07);
-  border-left:2px solid var(--teal);
-  padding:8px 14px;margin:14px 0;
-  letter-spacing:.02em;
-}
-.modal-derivation{
-  font-family:var(--mono);font-size:9px;
-  color:var(--cream3);line-height:1.9;
-}
-.modal-derivation .step{
-  display:block;padding:2px 0;
-  border-bottom:1px solid var(--edge2);
-}
-.modal-derivation .step:last-child{border:none;}
-.modal-derivation .step.highlight{color:var(--gold);}
-.modal-desc{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--cream3);margin-bottom:14px;}
-#dossier-header{
-  position:relative;border-bottom:1px solid var(--edge);overflow:hidden;
-}
-.dossier-stripe{
-  height:2px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-  opacity:.5;
-}
-.dossier-meta{
-  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
-  padding:14px 52px;
-  font-family:var(--mono);font-size:8px;letter-spacing:.22em;
-  text-transform:uppercase;color:var(--cream3);
-  border-bottom:1px solid var(--edge2);
-}
-.dossier-meta .classification{
-  color:var(--gold);border:1px solid rgba(200,168,74,.3);
-  padding:3px 10px;letter-spacing:.18em;font-size:7.5px;
-}
-.title-block{padding:72px 52px 56px;max-width:900px;position:relative;}
-.title-block::before{
-  content:'C';position:absolute;right:52px;top:50%;transform:translateY(-50%);
-  font-family:var(--serif);font-size:26vw;font-weight:400;font-style:italic;
-  color:rgba(200,168,74,.03);line-height:1;pointer-events:none;letter-spacing:-.05em;
-}
-.eyebrow{font-family:var(--mono);font-size:8px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:28px;}
-h1.main{font-family:var(--serif);font-size:clamp(2.4rem,5vw,4.2rem);font-weight:400;font-style:italic;color:var(--cream);line-height:1.08;margin-bottom:20px;letter-spacing:-.01em;}
-h1.main em{color:var(--gold);font-style:italic;}
-.subtitle{font-family:var(--mono);font-size:9.5px;color:var(--cream3);letter-spacing:.1em;line-height:1.8;}
+/* ── RING ── */
+#rw{height:240px;border-top:1px solid var(--edge);display:flex;}
+#rc{display:block;flex:1;}
+#rinfo{width:160px;border-left:1px solid var(--edge);padding:14px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.rr{display:flex;justify-content:space-between;align-items:baseline;}
+.rk{font-family:var(--mono);font-size:8px;color:var(--cream3);letter-spacing:.1em;text-transform:uppercase;}
+.rv{font-family:var(--mono);font-size:11px;color:var(--gold2);}
 
-/* ── CONSTANT HERO ── */
-#constant-hero{
-  background:var(--deep);border-top:1px solid var(--edge);border-bottom:1px solid var(--edge);
-  padding:36px 52px;display:flex;align-items:center;gap:52px;flex-wrap:wrap;
-}
-.c-label{font-family:var(--mono);font-size:7.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--cream3);margin-bottom:8px;}
-.c-value{font-family:var(--mono);font-size:clamp(1.1rem,2.5vw,1.8rem);color:var(--gold);letter-spacing:.04em;text-shadow:0 0 40px rgba(200,168,74,.25);}
-.c-value .digits-fade{color:var(--cream3);}
-.c-identity{font-family:var(--serif);font-size:1.1rem;font-style:italic;color:var(--cream2);line-height:2;}
-.c-identity .eq{font-family:var(--mono);font-size:.85rem;font-style:normal;color:var(--teal);background:var(--teal2);padding:2px 8px;border-radius:2px;display:inline-block;margin:2px 0;}
+/* ── BOTTOM STRIP ── */
+#bottom{border-top:1px solid var(--edge);background:var(--bg1);display:flex;overflow-x:auto;scrollbar-width:none;grid-column:1/3;}
+#bottom::-webkit-scrollbar{display:none;}
+.bc{flex:0 0 auto;min-width:90px;padding:9px 12px;border-right:1px solid var(--edge);cursor:pointer;transition:background .15s;}
+.bc:hover{background:var(--bg3);}
+.bc.active{background:rgba(200,168,74,.06);border-bottom:2px solid var(--gold);}
+.bc-l{font-family:var(--mono);font-size:7.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--cream3);margin-bottom:2px;}
+.bc-v{font-family:var(--mono);font-size:12px;}
+.bc-t{font-family:var(--mono);font-size:7.5px;color:var(--cream3);margin-top:1px;}
 
-/* ── SECTION PRESETS STRIP ── */
-.section-presets{
-  display:flex;gap:8px;flex-wrap:wrap;margin:28px 0 0;
-}
-.sec-preset{
-  background:transparent;border:1px solid var(--edge);
-  color:var(--cream3);font-family:var(--mono);font-size:7.5px;
-  padding:5px 14px;border-radius:2px;cursor:pointer;
-  letter-spacing:.1em;text-transform:uppercase;transition:all .15s;
-}
-.sec-preset:hover{border-color:rgba(200,168,74,.4);color:var(--gold);background:var(--gold3);}
-.sec-preset .arrow{opacity:.5;margin-left:4px;}
+/* ── TABLE ── */
+#tw{border-top:1px solid var(--edge);overflow:auto;max-height:220px;}
+table.rt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10.5px;}
+table.rt th{position:sticky;top:0;background:var(--bg2);padding:7px 10px;text-align:right;font-size:7.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--cream3);border-bottom:1px solid var(--edge2);white-space:nowrap;}
+table.rt th:first-child{text-align:left;}
+table.rt td{padding:5px 10px;text-align:right;border-bottom:1px solid var(--edge);color:var(--cream2);}
+table.rt td:first-child{text-align:left;color:var(--gold2);}
+table.rt tr:hover td{background:rgba(255,255,255,.02);}
+table.rt .prow{background:rgba(200,168,74,.05);}
+.ok{color:var(--teal)!important;}
 
-/* ── MAIN CONTENT ── */
-#content{max-width:760px;margin:0 auto;padding:80px 52px 120px;}
-@media(max-width:700px){
-  #content{padding:40px 24px 80px;}
-  .title-block{padding:40px 24px 36px;}
-  .dossier-meta{padding:14px 24px;}
-  #constant-hero{padding:28px 24px;gap:28px;}
-}
+/* ── POPUP ── */
+#popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:500;display:none;align-items:center;justify-content:center;padding:24px;}
+#popup-overlay.show{display:flex;}
+#popup{background:var(--bg1);border:1px solid var(--edge2);width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+.pop-head{padding:20px 24px 16px;border-bottom:1px solid var(--edge);display:flex;align-items:flex-start;gap:12px;}
+.pop-sw{width:12px;height:12px;border-radius:50%;margin-top:3px;flex-shrink:0;}
+.pop-title{font-family:var(--disp);font-size:1.4rem;font-weight:300;color:var(--cream);flex:1;}
+.pop-sub{font-family:var(--mono);font-size:9px;color:var(--cream3);margin-top:4px;letter-spacing:.1em;}
+.pop-close{font-family:var(--mono);font-size:18px;color:var(--cream3);cursor:pointer;padding:0 4px;line-height:1;}
+.pop-close:hover{color:var(--cream);}
+.pop-body{overflow-y:auto;flex:1;}
 
-.section-marker{display:flex;align-items:center;gap:16px;margin:64px 0 32px;}
-.section-marker .num{font-family:var(--mono);font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);opacity:.6;white-space:nowrap;}
-.section-marker::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--edge),transparent);}
-.section-marker .sec-preset{margin-left:auto;}
+/* Formula block */
+.pop-formula{padding:18px 24px;border-bottom:1px solid var(--edge);background:var(--bg2);}
+.pf-label{font-family:var(--mono);font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream3);margin-bottom:8px;}
+.pf-eq{font-family:var(--mono);font-size:13px;color:var(--gold2);line-height:1.9;}
+.pf-desc{font-family:var(--disp);font-size:15px;color:var(--cream2);margin-top:10px;line-height:1.6;font-style:italic;}
 
-h2.section{font-family:var(--serif);font-size:1.9rem;font-weight:400;font-style:italic;color:var(--cream);line-height:1.2;margin-bottom:24px;}
-h2.section em{color:var(--gold);}
+/* Proof block */
+.pop-proof{padding:16px 24px;border-bottom:1px solid var(--edge);}
+.pp-label{font-family:var(--mono);font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;}
+.pp-body{font-family:var(--disp);font-size:15px;color:var(--cream2);line-height:1.7;}
 
-p.prose{font-family:var(--serif);font-size:1.08rem;line-height:1.88;color:var(--cream2);margin-bottom:22px;font-weight:400;}
-p.prose strong{color:var(--cream);font-weight:500;}
-p.prose em{color:var(--gold);font-style:italic;}
+/* Current value */
+.pop-current{padding:14px 24px;border-bottom:1px solid var(--edge);display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+.pc-item{display:flex;flex-direction:column;gap:2px;}
+.pc-lbl{font-family:var(--mono);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream3);}
+.pc-val{font-family:var(--mono);font-size:15px;font-weight:500;}
 
-.math-block{font-family:var(--mono);font-size:.88rem;color:var(--teal);background:rgba(42,184,168,.05);border-left:2px solid var(--teal);padding:16px 20px;margin:28px 0;line-height:2;letter-spacing:.02em;border-radius:0 3px 3px 0;}
-.math-block .label{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--cream3);margin-bottom:8px;display:block;}
-.math-block .eq{color:var(--gold);}
-.math-block .comment{color:var(--cream4);font-size:.8rem;}
+/* Convergence table in popup */
+.pop-conv{padding:16px 24px;}
+.pop-conv-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream3);margin-bottom:10px;}
+.ctable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;}
+.ctable th{text-align:right;padding:6px 10px;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--cream3);border-bottom:1px solid var(--edge2);}
+.ctable th:first-child{text-align:left;}
+.ctable td{padding:5px 10px;text-align:right;border-bottom:1px solid var(--edge);color:var(--cream2);}
+.ctable td:first-child{text-align:left;color:var(--gold2);}
+.ctable .prow{background:rgba(200,168,74,.05);}
 
-.callout{background:var(--deep);border:1px solid var(--edge);border-top:2px solid var(--gold);padding:28px 32px;margin:36px 0;position:relative;overflow:hidden;}
-.callout::before{content:'';position:absolute;top:0;right:0;width:200px;height:200px;background:radial-gradient(circle at top right,rgba(200,168,74,.06),transparent 70%);pointer-events:none;}
-.callout-label{font-family:var(--mono);font-size:7.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
-.callout p{font-family:var(--serif);font-size:1.05rem;line-height:1.8;color:var(--cream2);margin:0;}
-.callout p strong{color:var(--cream);}
-
-/* ── CANVAS SECTION ── */
-#canvas-section{background:var(--deep);border-top:1px solid var(--edge);border-bottom:1px solid var(--edge);padding:0;margin:60px -52px;}
-@media(max-width:700px){#canvas-section{margin:40px -24px;}}
-.canvas-header{padding:20px 32px 0;display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;}
-.canvas-title{font-family:var(--serif);font-size:1.2rem;font-style:italic;color:var(--cream);}
-.canvas-sub{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream3);}
-.canvas-controls{padding:12px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--edge2);}
-.ctrl-btn{background:transparent;border:1px solid var(--edge);color:var(--cream3);font-family:var(--mono);font-size:8px;padding:5px 14px;border-radius:2px;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:all .15s;}
-.ctrl-btn:hover,.ctrl-btn.active{border-color:rgba(200,168,74,.4);color:var(--gold);background:var(--gold2);}
-.ctrl-btn.primary{border-color:rgba(42,184,168,.4);color:var(--teal);background:var(--teal2);}
-.ctrl-btn.danger{border-color:rgba(200,168,74,.2);color:var(--cream4);}
-.speed-row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:8px;color:var(--cream3);margin-left:auto;}
-.speed-row input{accent-color:var(--gold);width:80px;height:3px;}
-#cx-canvas{display:block;width:100%;height:340px;cursor:crosshair;}
-.canvas-stats{padding:10px 32px 16px;display:flex;gap:32px;flex-wrap:wrap;font-family:var(--mono);font-size:8.5px;color:var(--cream3);border-top:1px solid var(--edge2);}
-.stat-item{display:flex;flex-direction:column;gap:3px;}
-.stat-label{font-size:7px;letter-spacing:.16em;text-transform:uppercase;color:var(--cream4);}
-.stat-value{color:var(--gold);}
-
-/* canvas fullscreen */
-.canvas-actions{display:flex;gap:8px;margin-left:auto;}
-.icon-btn{background:transparent;border:1px solid var(--edge2);color:var(--cream3);font-family:var(--mono);font-size:7px;padding:4px 10px;border-radius:2px;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:all .15s;}
-.icon-btn:hover{border-color:rgba(200,168,74,.3);color:var(--gold);}
-
-/* fullscreen canvas overlay */
-#fs-overlay{
-  display:none;position:fixed;inset:0;z-index:2000;
-  background:var(--void);flex-direction:column;
-}
-#fs-overlay.show{display:flex;}
-#fs-canvas{display:block;flex:1;width:100%;}
-#fs-controls{
-  padding:10px 24px;border-top:1px solid var(--edge);
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  background:var(--deep);
-}
-
-/* ── JUMP TABLE ── */
-.jump-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:8.5px;margin:28px 0;}
-.jump-table th{padding:7px 12px;text-align:left;font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream3);border-bottom:1px solid var(--edge);font-weight:400;}
-.jump-table td{padding:6px 12px;border-bottom:1px solid var(--edge2);color:var(--cream2);}
-.jump-table td.p{color:var(--teal);}
-.jump-table td.s{color:var(--gold);}
-.jump-table td.cx{color:var(--cream);}
-.jump-table tr:hover td{background:rgba(255,255,255,.02);}
-
-/* ── PRECISION TABLE ── */
-.precision-block{background:var(--deep);border:1px solid var(--edge2);padding:24px 28px;margin:28px 0;}
-.precision-row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.5px;padding:7px 0;border-bottom:1px solid var(--edge2);color:var(--cream2);}
-.precision-row:last-child{border:none;}
-.precision-row .key{color:var(--cream3);}
-.precision-row .val{color:var(--gold);}
-
-/* ── FOOTER ── */
-footer{border-top:1px solid var(--edge);padding:28px 52px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream4);}
-footer a{color:var(--cream3);text-decoration:none;}
-
-.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
-.reveal.visible{opacity:1;transform:none;}
-
-@keyframes sonar-pulse{0%{transform:scale(1);opacity:.8;}100%{transform:scale(3);opacity:0;}}
-@keyframes float-in{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
-@keyframes fadeup{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+@media(max-width:680px){#wrap{grid-template-columns:1fr;}#left{position:static;height:auto;}#rinfo{display:none;}}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- OPENER OVERLAY                                              -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="opener">
-  <canvas id="opener-canvas"></canvas>
-
-  <!-- constant popup cards — positioned absolutely by JS -->
-  <div id="const-cards"></div>
-
-  <!-- preset pills -->
-  <div id="preset-bar">
-    <button class="preset-pill active" onclick="setPreset('convergence')">C(x) convergence</button>
-    <button class="preset-pill" onclick="setPreset('sonar')">Sonar field</button>
-    <button class="preset-pill" onclick="setPreset('quadratic')">Quadratic family</button>
-    <button class="preset-pill" onclick="setPreset('sentinel')">Golden sentinel</button>
-    <button class="preset-pill" onclick="setPreset('identity')">The identity</button>
+<div id="hd">
+  <div class="hd-title">Lift Survival · Ratio Explorer</div>
+  <div id="compute-bar">computing…</div>
+  <div class="hd-right">
+    <div class="hd-pill" id="hd-M">M = 1</div>
+    <div class="hd-pill" id="hd-C">C → —</div>
+    <div class="hd-pill" id="hd-phi">φ/M → —</div>
   </div>
+</div>
 
-  <!-- central text -->
-  <div id="opener-ui">
-    <div id="opener-text">
-      <div class="opener-eyebrow">Lift Survival Framework · Core Constant</div>
-      <div class="opener-title">The <em>Master Key</em></div>
-      <div class="opener-sub">C and C(x) · The sonar equation · A decoding task</div>
+<div id="wrap">
+<div id="left">
+
+  <div class="ps">
+    <div class="ps-lbl">Modulus</div>
+    <div class="mod-big" id="mod-num">1</div>
+    <div class="mod-sub">M</div>
+    <input type="range" class="sl" id="mod-sl" min="1" max="100000" value="1" oninput="setM(+this.value)">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--cream3);">
+      <span>1</span><span id="sl-max-lbl">100k</span>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button class="btn primary" id="play-btn" onclick="togglePlay()">Play</button>
+      <button class="btn" onclick="setM(1)">Reset</button>
+      <button class="btn" onclick="stepM(-1)">−1</button>
+      <button class="btn" onclick="stepM(1)">+1</button>
+    </div>
+    <div class="row">
+      <div class="btn" onclick="setSpeed(200)">Slow</div>
+      <div class="btn on" onclick="setSpeed(40)">Med</div>
+      <div class="btn" onclick="setSpeed(8)">Fast</div>
+      <div class="btn" onclick="setSpeed(0)">Max</div>
     </div>
   </div>
 
-  <!-- bottom controls -->
-  <div id="opener-controls">
-    <button class="op-btn small" id="btn-toggle-text" onclick="toggleOpenerText()">Hide text</button>
-    <button class="op-btn" onclick="enterPage()">Enter →</button>
-    <button class="op-btn teal" id="btn-op-anim" onclick="toggleOpenerAnim()">▶ Animate</button>
-    <button class="op-btn small" onclick="exportOpenerPNG()">Export PNG</button>
-    <button class="op-btn small" onclick="exportConstantsCSV()">Export CSV</button>
-    <button class="op-btn small" onclick="toggleOpenerFS()">Fullscreen</button>
+  <div class="prec-row">
+    <span class="prec-lbl">Decimal places</span>
+    <select class="prec-sel" id="prec-sel" onchange="updateDisplay()">
+      <option value="6">6</option>
+      <option value="8">8</option>
+      <option value="10">10</option>
+      <option value="12">12</option>
+      <option value="15" selected>15</option>
+    </select>
   </div>
 
-  <!-- hidden-mode persistent controls (speed + zoom) -->
-  <div id="hidden-controls">
-    <span class="hc-label">Speed</span>
-    <input class="hc-slider" type="range" id="hc-speed" min="1" max="20" value="8" style="width:90px"
-      oninput="opSpeedVal=+this.value;document.getElementById('hc-speed-v').textContent=this.value+'×'">
-    <span class="hc-val" id="hc-speed-v">8×</span>
-    <div class="hc-sep"></div>
-    <span class="hc-label">Zoom</span>
-    <input class="hc-slider" type="range" id="hc-zoom" min="50" max="200" value="100" style="width:90px"
-      oninput="opZoom=+this.value/100;document.getElementById('hc-zoom-v').textContent=this.value+'%';drawOpener()">
-    <span class="hc-val" id="hc-zoom-v">100%</span>
-    <div class="hc-sep"></div>
-    <button class="op-btn small" onclick="opZoom=1;document.getElementById('hc-zoom').value=100;document.getElementById('hc-zoom-v').textContent='100%';drawOpener()">Reset</button>
+  <div class="ps" style="flex:1;overflow-y:auto;">
+    <div class="ps-lbl">Ratios — toggle · click value for detail</div>
+    <div class="ratio-list" id="ratio-list"></div>
   </div>
 
-  <!-- card formula modal -->
-  <div id="card-modal" onclick="if(event.target===this)closeModal()">
-    <div class="modal-box">
-      <button class="modal-close" onclick="closeModal()">×</button>
-      <div class="modal-sym" id="modal-sym"></div>
-      <div class="modal-val" id="modal-val"></div>
-      <div class="modal-desc" id="modal-desc"></div>
-      <div class="modal-formula" id="modal-formula"></div>
-      <div class="modal-derivation" id="modal-derivation"></div>
+  <div class="prim-badge" id="prim-badge">★ Primorial M = p#</div>
+
+  <div class="ps">
+    <div class="ps-lbl">At current M</div>
+    <div class="sg">
+      <div class="sg-c"><div class="sg-l">φ(M)</div><div class="sg-v" id="sg-phi">—</div></div>
+      <div class="sg-c"><div class="sg-l">Lifts</div><div class="sg-v" id="sg-lft">—</div></div>
+      <div class="sg-c"><div class="sg-l">A(2,M)</div><div class="sg-v" id="sg-a2">—</div></div>
+      <div class="sg-c"><div class="sg-l">A(6,M)</div><div class="sg-v" id="sg-a6">—</div></div>
+      <div class="sg-c"><div class="sg-l">A(4,M)</div><div class="sg-v" id="sg-a4">—</div></div>
+      <div class="sg-c"><div class="sg-l">A(6)/A(2)</div><div class="sg-v" id="sg-r">—</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- FULLSCREEN CANVAS OVERLAY (for C(x) section)               -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="fs-overlay">
-  <canvas id="fs-canvas"></canvas>
-  <div id="fs-controls">
-    <button class="ctrl-btn primary" id="fs-play" onclick="fsPLay()">▶ Animate</button>
-    <button class="ctrl-btn" onclick="fsReset()">Reset</button>
-    <button class="ctrl-btn" onclick="fsStep()">+ Next prime</button>
-    <button class="ctrl-btn" onclick="fsAll()">All primes</button>
-    <div class="speed-row">
-      <span>speed</span>
-      <input type="range" id="fs-speed" min="1" max="20" value="5" oninput="document.getElementById('fs-spd-v').textContent=this.value">
-      <span id="fs-spd-v">5</span>
-    </div>
-    <div style="margin-left:auto;display:flex;gap:8px;">
-      <button class="icon-btn" onclick="exportFSPNG()">Export PNG</button>
-      <button class="icon-btn" onclick="closeFS()">✕ Exit</button>
-    </div>
+<div id="right">
+  <div id="mcw"><canvas id="mc"></canvas>
+    <div class="clabels" id="clabels"></div>
   </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- PAGE CONTENT                                                -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="page-content" style="display:none;">
-
-<header id="dossier-header">
-  <div class="dossier-stripe"></div>
-  <div class="dossier-meta">
-    <span>Wessen Getachew · math.NT · 2026</span>
-    <span class="classification">The Master Key</span>
-    <div style="display:flex;gap:18px;align-items:center;">
-      <a href="https://wessengetachew.github.io/Sierpi-ski/" target="_blank" style="color:var(--cream3);text-decoration:none;letter-spacing:.1em;transition:color .15s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--cream3)'">Sierpiński</a>
-      <a href="https://wessengetachew.github.io/Jump/" target="_blank" style="color:var(--cream3);text-decoration:none;letter-spacing:.1em;transition:color .15s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--cream3)'">Jump</a>
-      <a href="https://wessengetachew.github.io/Zeta/" target="_blank" style="color:var(--cream3);text-decoration:none;letter-spacing:.1em;transition:color .15s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--cream3)'">Zeta</a>
-      <a href="https://wessengetachew.github.io/Primes/" target="_blank" style="color:var(--cream3);text-decoration:none;letter-spacing:.1em;transition:color .15s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--cream3)'">Primes</a>
-    </div>
-    <button class="op-btn small" onclick="reopenOpener()" style="pointer-events:all;">↩ Opener</button>
-  </div>
-  <div class="title-block">
-    <div class="eyebrow">Lift Survival Framework · Core Constant</div>
-    <h1 class="main">The <em>Master Key</em> — <br>C and C(x)</h1>
-    <div class="subtitle">How a single constant encodes every prime · The sonar equation · A decoding task</div>
-  </div>
-</header>
-
-<div id="constant-hero">
-  <div class="c-value-block">
-    <div class="c-label">The Lift Survival Constant</div>
-    <div class="c-value">C = <span class="digits-known">0.5307118062</span><span class="digits-fade">46268…</span></div>
-    <div style="font-family:var(--mono);font-size:7.5px;color:var(--cream4);margin-top:6px;letter-spacing:.1em;">OEIS A065469 · verified to p ≤ 400,000,000</div>
-  </div>
-  <div class="c-identity">
-    C = ζ(2) · d<sub>FT</sub><br>
-    <span class="eq">= (π²/6) · ∏<sub>p</sub>(1 − 2/p²)</span><br>
-    <span class="eq">= ∏<sub>p</sub> (p²−2)/(p²−1)</span><br>
-    = 1.6449340668… × 0.3226346166… = 0.5307118062…
-  </div>
-</div>
-
-<div id="content">
-
-  <!-- §1 -->
-  <div class="section-marker reveal">
-    <span class="num">§ 01</span>
-    <button class="sec-preset" onclick="launchPreset('identity')">View opener — the identity <span class="arrow">→</span></button>
-  </div>
-  <h2 class="section reveal">What <em>C</em> actually is</h2>
-  <p class="prose reveal">C is not a curiosity. It is the long-run fraction of residues on a modular ring that survive a lift — the exact proportion of integers coprime to M that are also coprime to M+1, averaged over all M as M grows large. Every prime in existence has already shaped this number. Its decimal expansion is a compressed record of the entire prime distribution.</p>
-  <p class="prose reveal">The identity C = ζ(2) · d<sub>FT</sub> is not an approximation. It is exact. The Riemann zeta value ζ(2) = π²/6 encodes the aggregate weight of all primes squared. The Feller–Tornier constant d<sub>FT</sub> measures the density of consecutive squarefree integers. A single p² cancels term by term, and what remains is C.</p>
-  <div class="math-block reveal">
-    <span class="label">The identity — one line from definitions</span>
-    <span class="eq">ζ(2) · d<sub>FT</sub></span> = ∏<sub>p</sub> [p²/(p²−1)] · [(p²−2)/p²]<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= ∏<sub>p</sub> (p²−2)/(p²−1)<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="eq">C</span> <span class="comment">← the p² cancels exactly</span>
-  </div>
-  <p class="prose reveal">Because ζ(2) = π²/6 is computable to millions of decimal places, C can be known to hundreds of thousands of decimal places <strong>without sieving for a single new prime.</strong></p>
-
-  <!-- §2 -->
-  <div class="section-marker reveal">
-    <span class="num">§ 02</span>
-    <button class="sec-preset" onclick="launchPreset('convergence')">View opener — C(x) descent <span class="arrow">→</span></button>
-  </div>
-  <h2 class="section reveal">The function <em>C(x)</em> — a smooth field</h2>
-  <p class="prose reveal">C is the limit. C(x) is the function that approaches it — a smooth, continuous Euler product defined for every real x ≥ 0. Between exits, C(x) is perfectly smooth. It is a field under tension, and the primes are the only things that disturb it.</p>
-  <div class="math-block reveal">
-    <span class="label">C(x) — the smooth function</span>
-    f<sub>p</sub>(x) = <span class="eq">p/(p+1)</span> &nbsp;if p ≤ x+1 &nbsp;[saturated]<br>
-    f<sub>p</sub>(x) = <span class="eq">(p²−x−1)/(p²−1)</span> &nbsp;if p > x+1 &nbsp;[active]<br><br>
-    C(x) = ∏<sub>p</sub> f<sub>p</sub>(x) &nbsp;&nbsp;<span class="comment">← smooth · continuous · no discontinuities</span><br>
-    lim<sub>x→∞</sub> C(x) = C ≈ 0.530711806246…
-  </div>
-
-  <!-- LIVE CANVAS -->
-  <div id="canvas-section" class="reveal">
-    <div class="canvas-header">
-      <div class="canvas-title">C(x) — live descent</div>
-      <div class="canvas-sub">Each prime drops the function by exactly s = 1/p(p−1)</div>
-      <div class="canvas-actions">
-        <button class="icon-btn" onclick="openFS()">⤢ Fullscreen</button>
-        <button class="icon-btn" onclick="exportSectionPNG()">↓ PNG</button>
-        <button class="icon-btn" onclick="exportStepsCSV()">↓ CSV</button>
+  <div id="rw">
+    <canvas id="rc"></canvas>
+    <div id="rinfo">
+      <div style="font-family:var(--mono);font-size:7.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--cream3);margin-bottom:6px;">Ring M</div>
+      <div class="rr"><span class="rk">M</span><span class="rv" id="ri-M">—</span></div>
+      <div class="rr"><span class="rk">φ(M)</span><span class="rv" id="ri-phi">—</span></div>
+      <div class="rr"><span class="rk">Lifts</span><span class="rv" id="ri-lft">—</span></div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--edge);">
+        <div class="rr"><span class="rk" style="color:var(--teal)">Teal</span><span style="font-family:var(--mono);font-size:8px;color:var(--cream3)">lifts</span></div>
+        <div class="rr"><span class="rk" style="color:var(--coral)">Coral</span><span style="font-family:var(--mono);font-size:8px;color:var(--cream3)">stays</span></div>
+        <div class="rr"><span class="rk" style="color:var(--cream3)">Grey</span><span style="font-family:var(--mono);font-size:8px;color:var(--cream3)">non-cop.</span></div>
       </div>
     </div>
-    <div class="canvas-controls">
-      <button class="ctrl-btn primary" id="btn-play" onclick="togglePlay()">▶ Animate</button>
-      <button class="ctrl-btn" onclick="resetAnim()">Reset</button>
-      <button class="ctrl-btn" id="btn-next" onclick="stepNext()">+ Next prime</button>
-      <button class="ctrl-btn" id="btn-all" onclick="stepAll()">All primes</button>
-      <div class="speed-row">
-        <span>speed</span>
-        <input type="range" id="anim-speed" min="1" max="20" value="5">
-        <span id="speed-label">5</span>
+  </div>
+  <div id="tw">
+    <table class="rt"><thead><tr>
+      <th>M</th><th>φ(M)</th><th>φ/M</th><th>Lifts</th><th>L/φ</th>
+      <th>CumC</th><th>A(2)</th><th>A(6)</th><th>A(6)/A(2)</th><th>J</th><th>★</th>
+    </tr></thead><tbody id="tb"></tbody></table>
+  </div>
+</div>
+</div>
+
+<div id="bottom">
+  <div class="bc active" onclick="bcSel(0)"><div class="bc-l">C</div><div class="bc-v" id="bc-C" style="color:var(--gold2)">—</div><div class="bc-t">→ 0.530712</div></div>
+  <div class="bc" onclick="bcSel(1)"><div class="bc-l">φ(M)/M avg</div><div class="bc-v" id="bc-phi" style="color:var(--teal)">—</div><div class="bc-t">→ 6/π²≈0.6079</div></div>
+  <div class="bc" onclick="bcSel(2)"><div class="bc-l">Lift rate</div><div class="bc-v" id="bc-lft" style="color:var(--coral)">—</div><div class="bc-t">→ C≈0.5307</div></div>
+  <div class="bc" onclick="bcSel(3)"><div class="bc-l">J partial</div><div class="bc-v" id="bc-J" style="color:var(--violet)">—</div><div class="bc-t">→ 0.773126</div></div>
+  <div class="bc" onclick="bcSel(4)"><div class="bc-l">D₀ partial</div><div class="bc-v" id="bc-D0" style="color:var(--sky)">—</div><div class="bc-t">→ 0.452217</div></div>
+  <div class="bc" onclick="bcSel(5)"><div class="bc-l">T partial</div><div class="bc-v" id="bc-T" style="color:var(--lime)">—</div><div class="bc-t">→ 0.320909</div></div>
+  <div class="bc" onclick="bcSel(6)"><div class="bc-l">A(6)/A(2)</div><div class="bc-v" id="bc-gap" style="color:var(--gold)">—</div><div class="bc-t">→ 2 at p#</div></div>
+  <div class="bc" onclick="bcSel(7)"><div class="bc-l">ζ(2)·∏(1−2/p²)</div><div class="bc-v" id="bc-zeta" style="color:var(--teal)">—</div><div class="bc-t">→ C identity</div></div>
+  <div class="bc" onclick="bcSel(8)"><div class="bc-l">D₀+T vs J</div><div class="bc-v" id="bc-dt" style="color:var(--lime)">—</div><div class="bc-t">error → 0</div></div>
+</div>
+
+<!-- POPUP -->
+<div id="popup-overlay" onclick="if(event.target===this)closePopup()">
+  <div id="popup">
+    <div class="pop-head">
+      <div class="pop-sw" id="pop-sw"></div>
+      <div style="flex:1">
+        <div class="pop-title" id="pop-title">—</div>
+        <div class="pop-sub" id="pop-sub">—</div>
+      </div>
+      <div class="pop-close" onclick="closePopup()">✕</div>
+    </div>
+    <div class="pop-body">
+      <div class="pop-formula">
+        <div class="pf-label">Formula</div>
+        <div class="pf-eq" id="pop-eq">—</div>
+        <div class="pf-desc" id="pop-desc">—</div>
+      </div>
+      <div class="pop-proof">
+        <div class="pp-label">Proof / Derivation</div>
+        <div class="pp-body" id="pop-proof">—</div>
+      </div>
+      <div class="pop-current">
+        <div class="pc-item"><div class="pc-lbl">Current M</div><div class="pc-val" id="pop-M" style="color:var(--gold2)">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">Current value</div><div class="pc-val" id="pop-val">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">Target / limit</div><div class="pc-val" id="pop-target" style="color:var(--cream3)">—</div></div>
+        <div class="pc-item"><div class="pc-lbl">Distance to target</div><div class="pc-val" id="pop-dist" style="color:var(--coral)">—</div></div>
+      </div>
+      <div class="pop-conv">
+        <div class="pop-conv-lbl">Convergence — step by step (scroll)</div>
+        <table class="ctable">
+          <thead><tr><th>M</th><th>Value</th><th>Target</th><th>Distance</th><th>★</th></tr></thead>
+          <tbody id="pop-tbody"></tbody>
+        </table>
       </div>
     </div>
-    <canvas id="cx-canvas"></canvas>
-    <div class="canvas-stats">
-      <div class="stat-item"><div class="stat-label">Current prime</div><div class="stat-value" id="stat-prime">—</div></div>
-      <div class="stat-item"><div class="stat-label">C(x) now</div><div class="stat-value" id="stat-cx">—</div></div>
-      <div class="stat-item"><div class="stat-label">Jump s = 1/p(p−1)</div><div class="stat-value" id="stat-s">—</div></div>
-      <div class="stat-item"><div class="stat-label">Distance to C∞</div><div class="stat-value" id="stat-diff">—</div></div>
-      <div class="stat-item"><div class="stat-label">Primes absorbed</div><div class="stat-value" id="stat-n">0</div></div>
-    </div>
   </div>
-
-  <!-- §3 -->
-  <div class="section-marker reveal">
-    <span class="num">§ 03</span>
-    <button class="sec-preset" onclick="launchPreset('sonar')">View opener — sonar field <span class="arrow">→</span></button>
-  </div>
-  <h2 class="section reveal">D(x) — the <em>sonar equation</em></h2>
-  <p class="prose reveal">Take the log-derivative of C(x) and negate it. What emerges is D(x) — smooth everywhere except at one class of points. At x = p−1, for each prime p, the active term exits. Its value at exit is exactly 1/p(p−1). D(x) jumps.</p>
-  <div class="math-block reveal">
-    <span class="label">D(x) — the log-derivative</span>
-    D(x) = −d/dx log C(x) = <span class="eq">Σ<sub>p &gt; x+1</sub> 1/(p²−x−1)</span><br><br>
-    Jump at x = p−1: &nbsp;<span class="eq">ΔD = 1/p(p−1) = s</span><br>
-    At x = m−1, m composite: &nbsp;<span class="comment">ΔD = 0 exactly</span>
-  </div>
-  <div class="callout reveal">
-    <div class="callout-label">The sonar principle</div>
-    <p>C(x) is built from modular ring geometry — not from a list of primes. The discontinuities of D(x) turn out to be at <strong>exactly the primes</strong> — nowhere else. The primes are not put in. They come out. C(x) is the medium. The primes are the disturbance. D(x) is the signal.</p>
-  </div>
-  <p class="prose reveal">The jump size s = 1/p(p−1) is the signature of prime p. Measure the jump, recover the prime: p = (1 + √(1 + 4/s)) / 2.</p>
-  <div class="math-block reveal">
-    <span class="label">The inversion — recovering the prime</span>
-    Given s: &nbsp;<span class="eq">sp² − sp − 1 = 0</span><br>
-    Solution: &nbsp;<span class="eq">p = (1 + √(1 + 4/s)) / 2</span><br><br>
-    At s = 1: &nbsp;p = φ = 1.6180339887… &nbsp;<span class="comment">← Fibonacci sentinel · unreachable</span><br>
-    At s = 1/p(p−1): &nbsp;p = p &nbsp;<span class="comment">← exact recovery · every prime</span>
-  </div>
-
-  <table class="jump-table reveal">
-    <thead>
-      <tr><th>Prime p</th><th>x = p−1</th><th>Jump s = 1/p(p−1)</th><th>C(x) at jump</th><th>Recovered p</th></tr>
-    </thead>
-    <tbody id="jump-tbody"></tbody>
-  </table>
-
-  <!-- §4 -->
-  <div class="section-marker reveal">
-    <span class="num">§ 04</span>
-    <button class="sec-preset" onclick="launchPreset('identity')">View opener — cheat code <span class="arrow">→</span></button>
-  </div>
-  <h2 class="section reveal">Why C is a <em>cheat code</em></h2>
-  <p class="prose reveal">Normally, knowing something about the billionth prime requires traversing every prime before it. C breaks this. Because C encodes the collective impact of all primes simultaneously, its decimal expansion carries information about primes that have never been explicitly computed.</p>
-  <div class="callout reveal">
-    <div class="callout-label">The decoding reframe</div>
-    <p>Finding primes is normally a search problem. The framework reframes it as a <strong>decoding problem</strong>: a high-resolution photograph of the haystack exists, and the needles are specific pixels following a geometric rule. The photograph is C. The geometric rule is s = 1/p(p−1).</p>
-  </div>
-  <div class="precision-block reveal">
-    <div class="precision-row"><span class="key">ζ(2) = π²/6</span><span class="val">Known to 100 trillion decimal places (2022)</span></div>
-    <div class="precision-row"><span class="key">d<sub>FT</sub> = ∏<sub>p</sub>(1−2/p²)</span><span class="val">Computable to matching precision</span></div>
-    <div class="precision-row"><span class="key">C = ζ(2) · d<sub>FT</sub></span><span class="val">Therefore computable to the same precision</span></div>
-    <div class="precision-row"><span class="key">Primes required</span><span class="val">Zero new primes needed to extend C</span></div>
-    <div class="precision-row"><span class="key">Verified at p ≤ 400M</span><span class="val">C(400M) within 1.4 × 10⁻⁸ of C∞</span></div>
-  </div>
-
-  <!-- §5 -->
-  <div class="section-marker reveal">
-    <span class="num">§ 05</span>
-    <button class="sec-preset" onclick="launchPreset('sentinel')">View opener — sentinel <span class="arrow">→</span></button>
-  </div>
-  <h2 class="section reveal">What C is — and what it <em>is not</em></h2>
-  <p class="prose reveal">C does not predict primes. D(x) has its discontinuities at the primes, but recovering which specific integers are prime still requires evaluating D(x) at specific points — which requires knowing the primes. The inversion formula p(s) is a verifier, not a generator.</p>
-  <div class="callout reveal">
-    <div class="callout-label">The source code metaphor</div>
-    <p>C is not the primes. C is the <strong>compiled output</strong> of the rule that generates the primes. The source code is modular ring geometry. C is what that source code evaluates to when run over all primes simultaneously. It is a fixed point of the system.</p>
-  </div>
-  <div class="math-block reveal">
-    <span class="label">J — the jump content</span>
-    J = <span class="eq">Σ<sub>p</sub> 1/p(p−1)</span> = <span class="eq">Σ<sub>k≥2</sub> P(k)</span><br>
-    &nbsp;&nbsp;≈ 0.773156601274064…<br><br>
-    C encodes the primes multiplicatively · J encodes additively<br>
-    <span class="comment">Neither requires finding a single new prime to compute.</span>
-  </div>
-
-  <!-- §6 -->
-  <div class="section-marker reveal">
-    <span class="num">§ 06</span>
-    <button class="sec-preset" onclick="launchPreset('quadratic')">View opener — quadratic family <span class="arrow">→</span></button>
-  </div>
-  <h2 class="section reveal">The <em>Golden Ratio Sentinel</em></h2>
-  <p class="prose reveal">At s = 1, the inversion formula gives φ = (1+√5)/2 = 1.6180339887… — the positive root of the Fibonacci characteristic equation x² − x − 1 = 0. No prime produces s = 1. The golden ratio is the permanent unreachable boundary.</p>
-  <p class="prose reveal">The Fibonacci sequence and the prime number sequence are both governed by the same quadratic family sp² − sp − 1 = 0, separated only by the parameter s. At s = 1, you are at the Fibonacci fixed point. As s decreases from 1 toward 0, the positive root passes through every prime in exact order.</p>
-  <div class="math-block reveal">
-    <span class="label">The quadratic family</span>
-    sp² − sp − 1 = 0 &nbsp;← one-parameter family<br><br>
-    s = 1: &nbsp;<span class="eq">p = φ = 1.6180339887…</span> &nbsp;← Fibonacci · unreachable<br>
-    s = 1/2: &nbsp;<span class="eq">p = 2</span> &nbsp;← first prime<br>
-    s = 1/6: &nbsp;<span class="eq">p = 3</span><br>
-    s = 1/20: &nbsp;<span class="eq">p = 5</span><br>
-    s → 0: &nbsp;<span class="eq">p → ∞</span> &nbsp;← large primes
-  </div>
-</div><!-- /content -->
-
-<footer>
-  <span>Wessen Getachew · 2026 · math.NT</span>
-  <span>C ≈ 0.530711806246… · OEIS A065469</span>
-  <span>J ≈ 0.773156601274… · φ = 1.6180339887…</span>
-</footer>
-
-</div><!-- /page-content -->
+</div>
 
 <script>
-'use strict';
+// ═══════════════════════════════════════════════════════════
+// MATH CORE
+// ═══════════════════════════════════════════════════════════
+function gcd(a,b){while(b){let t=b;b=a%b;a=t;}return a;}
 
-// ─── MATH ────────────────────────────────────────────────────
-function sieve(n){const a=new Uint8Array(n+1).fill(1);a[0]=a[1]=0;for(let i=2;i*i<=n;i++)if(a[i])for(let j=i*i;j<=n;j+=i)a[j]=0;const r=[];for(let i=2;i<=n;i++)if(a[i])r.push(i);return r;}
-const PRIMES=sieve(10000);
-const C_INF=0.53071180624626;
-const PHI=(1+Math.sqrt(5))/2;
-function jumpSize(p){return 1/(p*(p-1));}
-function posRoot(s){return(1+Math.sqrt(1+4/s))/2;}
+// Linear phi sieve
+const MAX_M = 100000;
+const PHI = new Int32Array(MAX_M+2);
+const IS_PRIME = new Uint8Array(MAX_M+2);
+(function(){
+  for(let i=0;i<=MAX_M+1;i++) PHI[i]=i;
+  for(let i=2;i<=MAX_M+1;i++){
+    if(PHI[i]===i){ // i is prime
+      IS_PRIME[i]=1;
+      for(let j=i;j<=MAX_M+1;j+=i) PHI[j]-=PHI[j]/i;
+    }
+  }
+})();
 
-// Precomputed steps
-const steps=[];
-{let c=1.0;PRIMES.forEach(p=>{c*=(p*p-2)/(p*p-1);steps.push({p,cx:c,s:jumpSize(p)});});}
+// Squarefree divisors with Möbius for a number n
+function sqdivs(n){
+  const primes=[];
+  let t=n, p=2;
+  while(p*p<=t){if(t%p===0){primes.push(p);while(t%p===0)t=Math.floor(t/p);}p++;}
+  if(t>1)primes.push(t);
+  let res=[[1,1]];
+  for(const pr of primes) res=[...res.map(([d,m])=>[d*pr,-m]),...res];
+  return res;
+}
 
-// Constants for popup cards
-const CONSTANTS=[
-  {
-    sym:'C', val:'0.530711806246…', desc:'Lift Survival Constant', color:'var(--gold)',
-    formula:'C = ζ(2) · d_FT = ∏ₚ (p²−2)/(p²−1)',
-    derivation:[
-      'Start: C(x) = ∏_{p≤x} (p²−2)/(p²−1)',
-      'Factor each term: (p²−2)/(p²−1) = [p²/(p²−1)] · [(p²−2)/p²]',
-      '= [1/(1−1/p²)] · [1 − 2/p²]',
-      'Product over all p:',
-      'C = ζ(2) · ∏ₚ(1 − 2/p²)',
-      '= (π²/6) · d_FT',
-      '≈ 1.6449… × 0.3226… = 0.530711806246…',
-      'OEIS A065469 · verified to p ≤ 400M'
-    ]
-  },
-  {
-    sym:'J', val:'0.773156601274…', desc:'Jump Content Σ 1/p(p−1)', color:'var(--teal)',
-    formula:'J = Σₚ 1/p(p−1) = Σ_{k≥2} P(k)',
-    derivation:[
-      'Each prime p contributes a jump s = 1/p(p−1) to D(x)',
-      'J = total jump mass = Σₚ s_p = Σₚ 1/p(p−1)',
-      'Partial fractions: 1/p(p−1) = 1/(p−1) − 1/p',
-      'Also: 1/p(p−1) = Σ_{k≥2} 1/p^k  (geometric series)',
-      'So J = Σ_{k≥2} Σₚ 1/p^k = Σ_{k≥2} P(k)',
-      'where P(k) = Σₚ 1/p^k is the prime zeta function',
-      'J ≈ P(2)+P(3)+P(4)+… = 0.4522+0.1748+… ≈ 0.773156…'
-    ]
-  },
-  {
-    sym:'φ', val:'1.618033988749…', desc:'Golden Ratio Sentinel', color:'var(--gold)',
-    formula:'φ = (1+√5)/2 = lim_{s→1} p(s)',
-    derivation:[
-      'Recovery formula: p(s) = (1+√(1+4/s))/2',
-      'At s = 1: p(1) = (1+√5)/2 = φ',
-      'φ satisfies: φ² − φ − 1 = 0',
-      '  ↳ this is sp²−sp−1=0 evaluated at s=1',
-      '  ↳ also the Fibonacci recurrence characteristic eq',
-      'No prime produces s=1:',
-      '  s = 1/p(p−1) < 1/2 for all primes p≥2',
-      'φ is the infimum of {p(s) : p prime} — unreachable'
-    ]
-  },
-  {
-    sym:'ζ(2)', val:'1.644934066848…', desc:'π²/6 — Euler (1734)', color:'var(--cream2)',
-    formula:'ζ(2) = Σ_{n≥1} 1/n² = π²/6 = ∏ₚ 1/(1−1/p²)',
-    derivation:[
-      'Euler (1734): sin(πx)/πx = ∏_{n≥1}(1−x²/n²)',
-      'Expand both sides as power series in x²:',
-      '  LHS: 1 − π²x²/6 + …',
-      '  RHS: 1 − (Σ 1/n²)x² + …',
-      'Matching x² coefficient: Σ 1/n² = π²/6',
-      'Euler product: ζ(2) = ∏ₚ p²/(p²−1)',
-      'ζ(2) ≈ 1 + 1/4 + 1/9 + 1/16 + … = 1.6449340668…'
-    ]
-  },
-  {
-    sym:'d_FT', val:'0.322634616577…', desc:'Feller-Tornier constant', color:'var(--cream2)',
-    formula:'d_FT = ∏ₚ(1−2/p²) = C/ζ(2)',
-    derivation:[
-      'Density of integers n where rad(n)² | n has no prime²:',
-      'd_FT = density of {n : gcd(n,n+1) squarefree factor}',
-      'Euler product: d_FT = ∏ₚ(1 − 2/p²)',
-      '  Each p contributes: Prob(p²∤n AND p²∤n+1)',
-      '  = 1 − 2/p² (inclusion-exclusion over consecutive)',
-      'd_FT = C / ζ(2) = 0.5307… / 1.6449… = 0.3226…',
-      'OEIS A065474'
-    ]
-  },
-  {
-    sym:'D₀', val:'0.551691597558…', desc:'D(0) initial sonar value', color:'var(--violet)',
-    formula:'D₀ = D(0) = Σₚ 1/(p²−1)',
-    derivation:[
-      'D(x) = −d/dx log C(x) = Σ_{p>x+1} 1/(p²−x−1)',
-      'At x = 0: D(0) = Σₚ 1/(p²−1)',
-      'Partial fractions: 1/(p²−1) = ½[1/(p−1) − 1/(p+1)]',
-      'Equivalently: D₀ = Σₚ 1/(p²−1)',
-      '  = 1/(2²−1) + 1/(3²−1) + 1/(5²−1) + …',
-      '  = 1/3 + 1/8 + 1/24 + 1/48 + …',
-      '≈ 0.551691597558…',
-      'This is the sonar field intensity at x=0'
-    ]
-  },
-  {
-    sym:'C₂', val:'0.660161815846…', desc:'Hardy-Littlewood twin prime constant', color:'var(--coral)',
-    formula:'C₂ = 2∏_{p≥3}(p(p−2)/(p−1)²)',
-    derivation:[
-      'Hardy-Littlewood Conjecture B (1923):',
-      'π₂(x) ~ 2C₂ · x / (log x)²',
-      'where π₂(x) = #{p≤x : p+2 prime}',
-      'C₂ = 2 · ∏_{p≥3} p(p−2)/(p−1)²',
-      '  = 2 · (3·1/4) · (5·3/16) · (7·5/36) · …',
-      'Connection to C:',
-      '  C₂ / C ≈ 1.244 (ratio is computable)',
-      'C₂ ≈ 0.660161815846869… OEIS A005597'
-    ]
-  },
-  {
-    sym:'P(2)', val:'0.452247420041…', desc:'Prime zeta function at 2', color:'var(--teal)',
-    formula:'P(2) = Σₚ 1/p² = Σ_{k≥1} μ(k)/k · log ζ(2k)',
-    derivation:[
-      'P(s) = Σₚ 1/pˢ — the prime zeta function',
-      'At s=2: P(2) = 1/4 + 1/9 + 1/25 + 1/49 + …',
-      'Möbius inversion from ζ:',
-      '  log ζ(s) = Σₚ Σ_{k≥1} 1/(k·p^{ks})',
-      '  P(s) = Σ_{k≥1} μ(k)/k · log ζ(ks)',
-      'At s=2: P(2) = log ζ(2) − ½log ζ(4) + …',
-      '  ≈ 0.4796 − 0.0494 + … = 0.45224…',
-      'First term of J: J = P(2)+P(3)+P(4)+…'
-    ]
-  },
+// Exact lifts using inclusion-exclusion
+function liftsExact(M){
+  const dM1=sqdivs(M+1);
+  const dM=sqdivs(M);
+  let tot=0;
+  for(const [d,muD] of dM1){
+    const n=Math.floor(M/d);
+    let inner=0;
+    for(const [e,muE] of dM) inner+=muE*Math.floor(n/e);
+    tot+=muD*inner;
+  }
+  return tot;
+}
+
+// Coprime pairs A(g,M) — exact, for moderate M
+function cpairs(g,M){
+  if(M>5000) return null; // too slow, skip
+  let c=0;
+  for(let r=1;r<=M;r++) if(gcd(r,M)===1&&gcd((r+g),M)===1)c++;
+  return c;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DATA STORE
+// ═══════════════════════════════════════════════════════════
+const PRIMORIALS=[1,2,6,30,210,2310,30030];
+function isPrimorial(m){return PRIMORIALS.includes(m);}
+function isPrimeN(n){return n<=MAX_M+1?IS_PRIME[n]===1:false;}
+
+// Precomputed history — store every M
+// For M>5000, skip A(g,M) to keep it fast
+const H=new Float64Array((MAX_M+1)*6); // [cumPhi, cumLift, J, D0, T, zetaInner]
+// Pack: H[m*6+0]=cumPhi, +1=cumLift, +2=J, +3=D0, +4=T, +5=zetaInner
+const LIFTS=new Int32Array(MAX_M+1);
+const PHIV=new Int32Array(MAX_M+1);
+let computedUpTo=0;
+let cPhi=0,cLift=0,cJ=0,cD0=0,cT=0,cZeta=1;
+const PI2_6=Math.PI*Math.PI/6;
+
+function computeRange(from,to){
+  for(let m=from;m<=to;m++){
+    const p=PHI[m];
+    const l=liftsExact(m);
+    PHIV[m]=p; LIFTS[m]=l;
+    cPhi+=p; cLift+=l;
+    if(IS_PRIME[m]){
+      cJ+=1/(m*(m-1));
+      cD0+=1/m/m;
+      cT+=1/(m*m*(m-1));
+      cZeta*=(1-2/m/m);
+    }
+    H[m*6+0]=cPhi; H[m*6+1]=cLift;
+    H[m*6+2]=cJ;   H[m*6+3]=cD0;
+    H[m*6+4]=cT;   H[m*6+5]=cZeta;
+  }
+  computedUpTo=to;
+}
+
+// Async chunked precompute
+function precompute(cb){
+  const CHUNK=500;
+  let cur=1;
+  function step(){
+    const end=Math.min(cur+CHUNK-1,MAX_M);
+    computeRange(cur,end);
+    cur=end+1;
+    const pct=Math.round(computedUpTo/MAX_M*100);
+    document.getElementById('compute-bar').textContent=`computing… ${pct}%`;
+    if(cur<=MAX_M) setTimeout(step,0);
+    else{document.getElementById('compute-bar').textContent='';cb();}
+  }
+  step();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RATIO DEFINITIONS
+// ═══════════════════════════════════════════════════════════
+const RATIOS=[
+  {key:'cumC',  name:'Cumul. Lift / Cumul. φ',   desc:'Running C → 0.530712',color:'#eacb6a',target:0.5307118062,on:true,
+   formula:'cumLift(M) / cumPhi(M)',
+   eq:'C(M) = [Σ_{m=1}^{M} lifts(m)] / [Σ_{m=1}^{M} φ(m)]',
+   proof:'For each m, lifts(m) counts residues r with gcd(r,m)=1 AND gcd(r,m+1)=1. Summing over all m and dividing by cumulative φ gives the running average lift survival rate. By the Euler product, this converges to C = ∏_p (p²−2)/(p²−1) ≈ 0.5307.',
+   full:'The constant C is the long-run fraction of coprime residues that survive the lift. Each prime p reduces survival by the factor (p²−2)/(p²−1). The product over all primes is absolutely convergent and equals C = ζ(2)·∏_p(1−2/p²).'},
+  {key:'phiM',  name:'φ(M) / M',                 desc:'→ 6/π² ≈ 0.60793',  color:'#3dc8b8',target:6/Math.PI/Math.PI,on:true,
+   formula:'φ(M) / M',
+   eq:'φ(M)/M = ∏_{p|M} (1 − 1/p)',
+   proof:'Euler\'s totient formula. The ratio φ(M)/M equals the product of (1−1/p) over all prime factors p of M. Averaged over all M from 1 to N, this converges to 6/π² = ∏_p(1−1/p²)^{−1}·∏_p(1−1/p)² = 1/ζ(2).',
+   full:'The average value of φ(M)/M over M=1..N converges to 6/π² as N→∞. This is a classical result following from the fact that the density of integers coprime to a random integer is 6/π².'},
+  {key:'liftPhi',name:'Lifts / φ(M)',             desc:'local rate per M',   color:'#e05060',target:0.5307118062,on:false,
+   formula:'lifts(M) / φ(M)',
+   eq:'lifts(M)/φ(M) = #{r≤M : gcd(r,M)=1, gcd(r,M+1)=1} / φ(M)',
+   proof:'This is the local lift survival rate at modulus M — the fraction of coprime residues that also survive to M+1. It is not monotone: it equals 1 when M+1 is prime (every coprime residue has gcd with M+1=1) and drops at composite M+1. The running average of this ratio converges to C.',
+   full:'When M+1 is prime, every r coprime to M satisfies gcd(r,M+1)=1 trivially (since M+1 is prime and r<M+1). So lifts(M)=φ(M) and ratio=1. When M+1 is composite, the ratio drops below 1. The oscillation averages out to C.'},
+  {key:'J',     name:'J = Σ 1/(p(p−1))',         desc:'→ 0.773126087',      color:'#9070d8',target:0.773126087,on:true,
+   formula:'J = Σ_{p prime, p≤M} 1/(p(p−1))',
+   eq:'J = ∑_p 1/(p(p−1)) = 1/2 + 1/6 + 1/20 + 1/42 + ...',
+   proof:'Each prime p contributes exactly 1/(p(p−1)) to J. This is the "jump" that prime p contributes to the total jump content of the ring system. The sum converges absolutely since 1/(p(p−1)) ~ 1/p² and Σ1/p² converges.',
+   full:'J is the total jump content of the lift framework. It satisfies J = D₀ + T term-by-term: 1/(p(p−1)) = 1/p² + 1/(p²(p−1)). This decomposition is algebraic — it holds for each prime individually.'},
+  {key:'D0',    name:'D₀ = Σ 1/p²',              desc:'→ 0.452216843',      color:'#4898e8',target:0.4522168,on:false,
+   formula:'D₀ = Σ_{p prime, p≤M} 1/p² = P(2)',
+   eq:'D₀ = ∑_p p^{−2} = 1/4 + 1/9 + 1/25 + 1/49 + ...',
+   proof:'D₀ is the prime zeta function P(2) evaluated at s=2. It is a classical object. Its convergence follows from the prime number theorem. D₀ ≈ 0.4522 is the "direct" component of J.',
+   full:'In the decomposition J = D₀ + T, D₀ captures the dominant part of each prime\'s jump: 1/p² is the leading term of 1/(p(p−1)) = 1/p² + 1/p³ + 1/p⁴ + ...'},
+  {key:'T',     name:'T = Σ 1/(p²(p−1))',        desc:'→ 0.320909245',      color:'#80c860',target:0.3209092,on:false,
+   formula:'T = Σ_{p prime, p≤M} 1/(p²(p−1))',
+   eq:'T = ∑_p 1/(p²(p−1)) = 1/4 + 1/18 + 1/100 + ...',
+   proof:'T is the "carry" component of J. Each term 1/(p²(p−1)) is the difference between the full jump 1/(p(p−1)) and its leading term 1/p². Since 1/(p²(p−1)) ~ 1/p³, this series converges faster than D₀.',
+   full:'The identity J = D₀ + T is exact: 1/(p(p−1)) = 1/p² + 1/(p²(p−1)) follows from combining fractions over denominator p²(p−1). This means J, D₀, T are not three independent constants — they are one quantity viewed from three angles.'},
+  {key:'a6a2',  name:'A(6,M) / A(2,M)',           desc:'→ 2 at primorials',  color:'#c8a84a',target:2,on:true,
+   formula:'A(g,M) = #{r≤M : gcd(r,M)=1, gcd(r+g,M)=1}',
+   eq:'A(6,M)/A(2,M) = 2  (exactly, at all primorials M=p#)',
+   proof:'By CRT, A(g,M) factors multiplicatively over primes q dividing M. For each such q: if q|g, contribute (q−1)/q; if q∤g, contribute (q−2)/q. Only q=3 distinguishes g=6 from g=2 (since 3|6 but 3∤2). Factor at q=3: g=6 gives 2/3, g=2 gives 1/3. Ratio = (2/3)/(1/3) = 2. All other prime factors cancel.',
+   full:'This is a theorem, not an observation. It holds for every primorial M≥6 and shows that the Hardy–Littlewood ratio S(6)/S(2)=2 is not asymptotic — it is already exact at every finite primorial ring.'},
+  {key:'a4a2',  name:'A(4,M) / A(2,M)',           desc:'→ 1 at primorials',  color:'#e8904a',target:1,on:false,
+   formula:'A(4,M) / A(2,M)',
+   eq:'A(4,M)/A(2,M) = 1  (exactly, at all primorials)',
+   proof:'Since 4=2² and 2 is the only prime dividing 4, and 2 also divides 2, no odd prime q distinguishes gap 4 from gap 2. The only prime that could distinguish them is q=2, but the factor at q=2 is the same for both gaps since both are even. Hence the ratio is exactly 1.',
+   full:'A(4,M)=A(2,M) at every primorial because gap 4 and gap 2 have the same odd prime divisors (none). This is a consequence of Theorem 3.1 in the full paper.'},
+  {key:'zetaC', name:'ζ(2)·∏(1−2/p²)',           desc:'→ C (identity)',     color:'#3dc8b8',target:0.5307118062,on:false,
+   formula:'ζ(2) · ∏_{p≤M} (1 − 2/p²)',
+   eq:'C = ζ(2)·∏_p(1−2/p²) = [∏_p p²/(p²−1)]·[∏_p(p²−2)/p²] = ∏_p(p²−2)/(p²−1)',
+   proof:'Expand: ζ(2)·∏(1−2/p²) = ∏[p²/(p²−1)]·∏[(p²−2)/p²] = ∏[p²(p²−2)/(p²(p²−1))] = ∏[(p²−2)/(p²−1)] = C. The p² cancels term by term. Both products are absolutely convergent.',
+   full:'This is Theorem 1.2. The Feller–Tornier constant d_FT = ½(1+∏(1−2/p²)), so ∏(1−2/p²) = 2d_FT−1, giving C = ζ(2)·(2d_FT−1). The identity was verified numerically to converge from both sides across 1,000,000 primes.'},
+  {key:'D0T',   name:'|J − (D₀+T)|',             desc:'identity error → 0', color:'#c870a0',target:0,on:false,
+   formula:'|J − (D₀ + T)|',
+   eq:'J = D₀ + T  ⟺  ∑1/(p(p−1)) = ∑1/p² + ∑1/(p²(p−1))',
+   proof:'For each prime p: 1/(p(p−1)) − 1/p² − 1/(p²(p−1)) = [(p−1) − (p−1) − 1 + 1]/(p²(p−1)) = 0. So the error is identically zero at every prime and at every partial sum. The plot should show a flat line at 0.',
+   full:'This is an algebraic identity. The error |J−(D₀+T)| should be exactly 0 (up to floating-point rounding, ~10⁻¹⁵). If you see any non-zero values, they are floating-point artifacts, not mathematical errors.'},
 ];
 
-// ─── OPENER CANVAS ────────────────────────────────────────────
-const opCv=document.getElementById('opener-canvas');
-const opG=opCv.getContext('2d');
-let opW,opH;
-let opRAF=null, opAnimating=false;
-let opTime=0;
-let opPreset='convergence';
-let opTextVisible=true;
-let opZoom=1.0;
-let opSpeedVal=8;
-let opStepIdx=0;
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let M=1, playing=false, playSpeed=40, playTimer=null, prec=15;
+let activeRatioKey=null;
 
-const PRESET_CONFIGS={
-  convergence:{
-    label:'C(x) convergence',
-    bg:'#06060a',
-    draw:drawConvergenceScene,
-    cards:[0,1,3]
-  },
-  sonar:{
-    label:'Sonar field — D(x)',
-    bg:'#04060e',
-    draw:drawSonarScene,
-    cards:[0,7,4]
-  },
-  quadratic:{
-    label:'Quadratic family — sp²−sp−1=0',
-    bg:'#07060a',
-    draw:drawQuadraticScene,
-    cards:[2,0,1]
-  },
-  sentinel:{
-    label:'Golden Ratio Sentinel',
-    bg:'#060609',
-    draw:drawSentinelScene,
-    cards:[2,3,0]
-  },
-  identity:{
-    label:'The identity C=ζ(2)·d_FT',
-    bg:'#05060c',
-    draw:drawIdentityScene,
-    cards:[0,3,4]
+function getV(m, key){
+  if(m>computedUpTo||m<1) return NaN;
+  const cPhi=H[m*6+0],cLift=H[m*6+1],J=H[m*6+2],D0=H[m*6+3],T=H[m*6+4],zi=H[m*6+5];
+  const phi=PHIV[m], lft=LIFTS[m];
+  switch(key){
+    case 'cumC':   return cLift/cPhi;
+    case 'phiM':   return phi/m;
+    case 'liftPhi':return phi?lft/phi:0;
+    case 'J':      return J;
+    case 'D0':     return D0;
+    case 'T':      return T;
+    case 'a6a2':   {const a6=cpairs(6,m),a2=cpairs(2,m);return(a6!==null&&a2)?a6/a2:NaN;}
+    case 'a4a2':   {const a4=cpairs(4,m),a2=cpairs(2,m);return(a4!==null&&a2)?a4/a2:NaN;}
+    case 'zetaC':  return PI2_6*zi;
+    case 'D0T':    return Math.abs(J-(D0+T));
+    default: return NaN;
   }
-};
-
-function resizeOpener(){
-  opW=opCv.offsetWidth; opH=opCv.offsetHeight;
-  opCv.width=opW*devicePixelRatio; opCv.height=opH*devicePixelRatio;
-  drawOpener();
 }
 
-function drawOpener(){
-  if(!opW)return;
-  opG.save(); opG.scale(devicePixelRatio,devicePixelRatio);
-  const cfg=PRESET_CONFIGS[opPreset];
-  opG.fillStyle=cfg.bg; opG.fillRect(0,0,opW,opH);
-  // Apply zoom centered on canvas
-  if(opZoom!==1){
-    opG.translate(opW/2,opH/2);
-    opG.scale(opZoom,opZoom);
-    opG.translate(-opW/2,-opH/2);
-  }
-  cfg.draw(opG,opW,opH,opTime,opStepIdx);
-  opG.restore();
+// ═══════════════════════════════════════════════════════════
+// BUILD UI
+// ═══════════════════════════════════════════════════════════
+function buildRatioList(){
+  const el=document.getElementById('ratio-list');
+  el.innerHTML='';
+  RATIOS.forEach(r=>{
+    const div=document.createElement('div');
+    div.className='ri'+(r.on?' on':'');
+    div.innerHTML=`<div class="ri-sw" style="background:${r.color}"></div>
+      <div class="ri-body"><div class="ri-name">${r.name}</div><div class="ri-desc">${r.desc}</div></div>
+      <div class="ri-val" id="rv-${r.key}" style="color:${r.color}" title="Click for detail">—</div>
+      <div class="ri-chk">${r.on?'●':'○'}</div>`;
+    div.addEventListener('click',e=>{
+      if(e.target.classList.contains('ri-val')){openPopup(r.key);return;}
+      r.on=!r.on;
+      div.className='ri'+(r.on?' on':'');
+      div.querySelector('.ri-chk').textContent=r.on?'●':'○';
+      drawMain(); buildClabels();
+    });
+    el.appendChild(div);
+  });
 }
 
-// ─── CONVERGENCE SCENE ───────────────────────────────────────
-function drawConvergenceScene(g,W,H,t,si){
-  const pad={l:80,r:60,t:80,b:80};
-  const cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
-  const showN=Math.min(si,steps.length);
-  const maxP=showN>0?Math.max(steps[showN-1].p*1.1,100):100;
-  const yMin=C_INF*0.955, yMax=1.02;
-  const toX=x=>x/maxP*cW+pad.l;
-  const toY=y=>cH-(y-yMin)/(yMax-yMin)*cH+pad.t;
-
-  // Fine grid
-  g.strokeStyle='rgba(200,168,74,.06)'; g.lineWidth=1;
-  for(let y=0.54;y<=1.0;y+=0.02){
-    if(y<yMin||y>yMax)continue;
-    const py=toY(y);
-    g.beginPath(); g.moveTo(pad.l,py); g.lineTo(W-pad.r,py); g.stroke();
-  }
-
-  // C∞ dashed line with glow
-  const cyInf=toY(C_INF);
-  const glowAlpha=0.3+0.1*Math.sin(t*0.015);
-  g.strokeStyle=`rgba(200,168,74,${glowAlpha})`; g.lineWidth=1.5; g.setLineDash([6,5]);
-  g.beginPath(); g.moveTo(pad.l,cyInf); g.lineTo(W-pad.r,cyInf); g.stroke();
-  g.setLineDash([]);
-  g.fillStyle='rgba(200,168,74,.7)'; g.font='bold 11px JetBrains Mono,monospace';
-  g.textAlign='left'; g.textBaseline='bottom';
-  g.fillText('C∞ = 0.530711806246…', pad.l+8, cyInf-6);
-
-  if(showN===0){
-    // Empty — show label
-    g.fillStyle='rgba(200,168,74,.15)'; g.font='1.5rem EB Garamond,serif'; g.textAlign='center';
-    g.fillText('C(x) begins at 1 — press Animate', W/2, H/2);
-    g.restore(); g.save(); g.scale(devicePixelRatio,devicePixelRatio);
-    return;
-  }
-
-  // Fill gradient under curve
-  const grad=g.createLinearGradient(0,pad.t,0,H-pad.b);
-  grad.addColorStop(0,'rgba(42,184,168,.18)');
-  grad.addColorStop(1,'rgba(42,184,168,.02)');
-  g.fillStyle=grad;
-  g.beginPath();
-  g.moveTo(toX(0),toY(1.0));
-  g.lineTo(toX(steps[0].p-1),toY(1.0));
-  for(let i=0;i<showN;i++){
-    const {p,cx}=steps[i];
-    const prevCx=i>0?steps[i-1].cx:1.0;
-    g.lineTo(toX(p-1),toY(prevCx));
-    g.lineTo(toX(p-1),toY(cx));
-    const nxt=i+1<showN?steps[i+1].p-1:maxP;
-    g.lineTo(toX(nxt),toY(cx));
-  }
-  g.lineTo(toX(maxP),toY(yMin));
-  g.lineTo(toX(0),toY(yMin));
-  g.closePath(); g.fill();
-
-  // Step line — teal glow
-  for(let pass=0;pass<2;pass++){
-    g.beginPath();
-    g.moveTo(toX(0),toY(1.0));
-    g.lineTo(toX(steps[0].p-1),toY(1.0));
-    for(let i=0;i<showN;i++){
-      const {p,cx}=steps[i];
-      const prevCx=i>0?steps[i-1].cx:1.0;
-      g.lineTo(toX(p-1),toY(prevCx));
-      g.lineTo(toX(p-1),toY(cx));
-      const nxt=i+1<showN?steps[i+1].p-1:maxP;
-      g.lineTo(toX(nxt),toY(cx));
-    }
-    if(pass===0){g.strokeStyle='rgba(42,184,168,.2)';g.lineWidth=6;}
-    else{g.strokeStyle='rgba(42,184,168,.9)';g.lineWidth=2;}
-    g.stroke();
-  }
-
-  // Jump markers
-  for(let i=0;i<showN;i++){
-    const {p,cx}=steps[i];
-    const prevCx=i>0?steps[i-1].cx:1.0;
-    const x=toX(p-1), y1=toY(prevCx), y2=toY(cx);
-    // Jump stroke
-    g.strokeStyle='rgba(200,168,74,.7)'; g.lineWidth=1.5;
-    g.beginPath(); g.moveTo(x,y1); g.lineTo(x,y2); g.stroke();
-    // Dot
-    const isLast=i===showN-1;
-    if(isLast){
-      // Sonar pulse
-      const pulse=((t%60)/60);
-      g.beginPath(); g.arc(x,y2,4+pulse*18,0,2*Math.PI);
-      g.strokeStyle=`rgba(200,168,74,${(1-pulse)*0.5})`; g.lineWidth=1.5; g.stroke();
-      g.fillStyle='#c8a84a';
-    } else {
-      g.fillStyle='rgba(200,168,74,.55)';
-    }
-    g.beginPath(); g.arc(x,y2,3,0,2*Math.PI); g.fill();
-    if(p<=31){
-      g.fillStyle='rgba(200,168,74,.6)'; g.font='8px JetBrains Mono,monospace';
-      g.textAlign='center'; g.textBaseline='bottom';
-      g.fillText('p='+p, x, Math.min(y1,y2)-3);
-    }
-  }
-
-  // Axes
-  g.strokeStyle='rgba(255,255,255,.2)'; g.lineWidth=1;
-  g.beginPath(); g.moveTo(pad.l,pad.t); g.lineTo(pad.l,H-pad.b); g.lineTo(W-pad.r,H-pad.b); g.stroke();
-  g.fillStyle='rgba(255,255,255,.2)'; g.font='9px JetBrains Mono,monospace';
-  g.textAlign='center';
-  g.fillText('x  (prime p enters at x = p−1)', W/2, H-pad.b+20);
-  g.save(); g.translate(pad.l-28,H/2); g.rotate(-Math.PI/2);
-  g.textAlign='center'; g.fillText('C(x)', 0, 0);
-  g.restore();
+function buildClabels(){
+  const el=document.getElementById('clabels');
+  el.innerHTML='';
+  RATIOS.filter(r=>r.on).forEach(r=>{
+    const d=document.createElement('div');
+    d.className='cl';
+    d.innerHTML=`<div class="cl-sw" style="background:${r.color}"></div><span>${r.name}</span>`;
+    el.appendChild(d);
+  });
 }
 
-// ─── SONAR SCENE ──────────────────────────────────────────────
-function drawSonarScene(g,W,H,t,si){
-  const cx=W/2, cy=H/2;
-  // Ripple rings from primes
-  const rings=PRIMES.slice(0,Math.min(15,si||15)).map((p,i)=>({p,phase:i*137.5,r:(i+1)*Math.min(W,H)*0.05}));
+// ═══════════════════════════════════════════════════════════
+// POPUP
+// ═══════════════════════════════════════════════════════════
+function openPopup(key){
+  const r=RATIOS.find(x=>x.key===key); if(!r) return;
+  activeRatioKey=key;
+  document.getElementById('pop-sw').style.background=r.color;
+  document.getElementById('pop-title').textContent=r.name;
+  document.getElementById('pop-sub').textContent=r.desc;
+  document.getElementById('pop-eq').textContent=r.eq;
+  document.getElementById('pop-desc').textContent=r.full;
+  document.getElementById('pop-proof').innerHTML=r.proof;
+  document.getElementById('pop-M').textContent=M;
+  const v=getV(M,key);
+  document.getElementById('pop-val').textContent=isNaN(v)?'—':v.toFixed(prec);
+  document.getElementById('pop-val').style.color=r.color;
+  document.getElementById('pop-target').textContent=r.target===0?'0':r.target.toFixed(15);
+  document.getElementById('pop-dist').textContent=isNaN(v)?'—':Math.abs(v-r.target).toExponential(6);
 
-  // Background field — concentric faint rings
-  for(let r=40;r<Math.max(W,H)*0.8;r+=Math.min(W,H)*0.06){
-    const pulse=0.04+0.02*Math.sin(t*0.02-r*0.08);
-    g.beginPath(); g.arc(cx,cy,r,0,2*Math.PI);
-    g.strokeStyle=`rgba(42,184,168,${pulse})`; g.lineWidth=1; g.stroke();
-  }
+  // Build convergence table
+  const tbody=document.getElementById('pop-tbody');
+  tbody.innerHTML='';
+  // Sample points: 1..20, then every 10 to 100, every 100 to 1000, every 1000 to M
+  const samples=[];
+  for(let m=1;m<=Math.min(20,M);m++) samples.push(m);
+  for(let m=30;m<=Math.min(100,M);m+=10) if(!samples.includes(m)) samples.push(m);
+  for(let m=200;m<=Math.min(1000,M);m+=100) samples.push(m);
+  for(let m=2000;m<=Math.min(10000,M);m+=1000) samples.push(m);
+  for(let m=20000;m<=Math.min(100000,M);m+=10000) samples.push(m);
+  samples.push(M);
+  const uniq=[...new Set(samples)].filter(m=>m<=computedUpTo).sort((a,b)=>a-b);
 
-  // Radiating lines from center
-  for(let a=0;a<12;a++){
-    const ang=a*Math.PI/6+t*0.005;
-    const len=Math.min(W,H)*0.45;
-    g.beginPath(); g.moveTo(cx,cy);
-    g.lineTo(cx+Math.cos(ang)*len, cy+Math.sin(ang)*len);
-    g.strokeStyle='rgba(42,184,168,.06)'; g.lineWidth=1; g.stroke();
-  }
-
-  // Prime dots as sonar echoes
-  PRIMES.slice(0,20).forEach((p,i)=>{
-    const ang=(i*137.508)*Math.PI/180+t*0.004;
-    const r=Math.min(W,H)*(0.08+jumpSize(p)*4)*8;
-    const px=cx+Math.cos(ang)*r, py=cy+Math.sin(ang)*r;
-    // Pulse
-    const pulse=(t*0.03+i)%1;
-    g.beginPath(); g.arc(px,py,4+pulse*20,0,2*Math.PI);
-    g.strokeStyle=`rgba(200,168,74,${(1-pulse)*0.4})`; g.lineWidth=1.5; g.stroke();
-    g.beginPath(); g.arc(px,py,3.5,0,2*Math.PI);
-    g.fillStyle='rgba(200,168,74,.8)'; g.fill();
-    if(p<=13){
-      g.fillStyle='rgba(200,168,74,.6)'; g.font='7.5px JetBrains Mono,monospace';
-      g.textAlign='center'; g.fillText('p='+p,px,py-10);
-    }
+  uniq.forEach(m=>{
+    const v=getV(m,key);
+    const d=isNaN(v)?'—':Math.abs(v-r.target).toExponential(5);
+    const tr=document.createElement('tr');
+    if(isPrimorial(m)) tr.className='prow';
+    tr.innerHTML=`<td>${m}${isPrimorial(m)?'★':''}</td>
+      <td style="color:${r.color}">${isNaN(v)?'—':v.toFixed(15)}</td>
+      <td>${r.target===0?'0':r.target.toFixed(12)}</td>
+      <td>${d}</td>
+      <td>${isPrimorial(m)?'p#':isPrimeN(m)?'p':''}</td>`;
+    tbody.appendChild(tr);
   });
 
-  // Center C constant
-  const grd=g.createRadialGradient(cx,cy,0,cx,cy,60);
-  grd.addColorStop(0,'rgba(200,168,74,.25)');
-  grd.addColorStop(1,'transparent');
-  g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,60,0,2*Math.PI); g.fill();
-  g.fillStyle='rgba(200,168,74,.9)'; g.font='bold 1.4rem EB Garamond,serif';
-  g.textAlign='center'; g.textBaseline='middle';
-  g.fillText('C', cx, cy-8);
-  g.fillStyle='rgba(200,168,74,.6)'; g.font='9px JetBrains Mono,monospace';
-  g.fillText('0.5307118…', cx, cy+12);
-
-  // D(x) label
-  g.fillStyle='rgba(42,184,168,.5)'; g.font='10px JetBrains Mono,monospace';
-  g.textAlign='left'; g.textBaseline='top';
-  g.fillText('D(x) = −d/dx log C(x) = Σ 1/(p²−x−1)', 24, H-40);
-  g.fillStyle='rgba(42,184,168,.3)';
-  g.fillText('jumps by s = 1/p(p−1) at x = p−1 for each prime', 24, H-24);
+  document.getElementById('popup-overlay').classList.add('show');
 }
 
-// ─── QUADRATIC SCENE ──────────────────────────────────────────
-function drawQuadraticScene(g,W,H,t,si){
-  const pad={l:80,r:50,t:60,b:60};
-  const cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
-  const xMin=-0.5, xMax=7.5, yMin=-3, yMax=3;
-  const toX=p=>(p-xMin)/(xMax-xMin)*cW+pad.l;
-  const toY=y=>cH-(y-yMin)/(yMax-yMin)*cH+pad.t;
+function closePopup(){
+  document.getElementById('popup-overlay').classList.remove('show');
+  activeRatioKey=null;
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePopup(); });
 
-  // Animate s oscillating between small prime values
-  const sAnim=opAnimating?(0.5-0.485*Math.abs(Math.sin(t*0.008))):0.5;
+// ═══════════════════════════════════════════════════════════
+// DRAW MAIN CHART
+// ═══════════════════════════════════════════════════════════
+function drawMain(){
+  const canvas=document.getElementById('mc');
+  const wrap=document.getElementById('mcw');
+  const W=wrap.clientWidth||800, H=wrap.clientHeight||380;
+  const dpr2=Math.min(window.devicePixelRatio||1,3);
+  canvas.width=W*dpr2; canvas.height=H*dpr2;
+  const ctx=canvas.getContext('2d'); ctx.scale(dpr2,dpr2);
+  ctx.fillStyle='#07070b'; ctx.fillRect(0,0,W,H);
+  if(M<2||computedUpTo<1) return;
+
+  const pad={l:54,r:20,t:18,b:32};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  const n=M; // data points = 1..M
+
+  const active=RATIOS.filter(r=>r.on);
+  let minV=0,maxV=2.3;
+  active.forEach(r=>{
+    const step=Math.max(1,Math.floor(M/400));
+    for(let m=1;m<=M;m+=step){
+      const v=getV(m,r.key);
+      if(isFinite(v)&&v>=0){minV=Math.min(minV,v*.9);maxV=Math.max(maxV,v*1.05);}
+    }
+  });
+  maxV=Math.min(maxV,2.6);
+
+  function px(m){return pad.l+(m-1)/(Math.max(M-1,1))*cw;}
+  function py(v){return pad.t+(1-(v-minV)/(maxV-minV))*ch;}
 
   // Grid
-  g.strokeStyle='rgba(255,255,255,.04)'; g.lineWidth=1;
-  for(let x=0;x<=7;x++){const px=toX(x);g.beginPath();g.moveTo(px,pad.t);g.lineTo(px,H-pad.b);g.stroke();}
-  for(let y=-2;y<=2;y++){const py=toY(y);g.beginPath();g.moveTo(pad.l,py);g.lineTo(W-pad.r,py);g.stroke();}
+  ctx.lineWidth=1;
+  [0,.25,.5,6/Math.PI/Math.PI,0.7731,1,1.5,2].forEach(v=>{
+    if(v<minV||v>maxV)return;
+    const y=py(v);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);
+    ctx.strokeStyle='rgba(255,255,255,.04)';ctx.stroke();
+    const labels={[6/Math.PI/Math.PI]:'6/π²',0.5307:'C',0.7731:'J',2:'2',0.4522:'D₀',1:'1'};
+    const lbl=v===6/Math.PI/Math.PI?'6/π²':v===0.7731?'J':v===2?'2':v.toFixed(2);
+    ctx.fillStyle='rgba(255,255,255,.24)';ctx.font='8.5px JetBrains Mono,monospace';
+    ctx.fillText(lbl,2,y+3);
+  });
 
-  // x-axis, y-axis
-  g.strokeStyle='rgba(255,255,255,.2)'; g.lineWidth=1;
-  g.beginPath(); g.moveTo(pad.l,toY(0)); g.lineTo(W-pad.r,toY(0)); g.stroke();
+  // Primorial markers
+  PRIMORIALS.forEach(pm=>{
+    if(pm<1||pm>M)return;
+    const x=px(pm);
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ch);
+    ctx.strokeStyle='rgba(200,168,74,.12)';ctx.lineWidth=1;ctx.setLineDash([2,5]);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(200,168,74,.45)';ctx.font='8px JetBrains Mono,monospace';
+    ctx.fillText(pm<1000?pm+'#':'p#',x+2,pad.t+9);
+  });
 
-  // φ line
-  const phiX=toX(PHI);
-  g.strokeStyle='rgba(200,168,74,.5)'; g.lineWidth=1.5; g.setLineDash([6,4]);
-  g.beginPath(); g.moveTo(phiX,pad.t); g.lineTo(phiX,H-pad.b); g.stroke();
-  g.setLineDash([]);
-  g.fillStyle='rgba(200,168,74,.8)'; g.font='10px JetBrains Mono,monospace';
-  g.textAlign='left'; g.fillText('φ = 1.6180…',phiX+5,pad.t+14);
+  // X labels
+  ctx.fillStyle='rgba(255,255,255,.28)';ctx.font='8.5px JetBrains Mono,monospace';
+  const xstep=Math.max(1,Math.floor(M/7));
+  for(let m=1;m<=M;m+=xstep) ctx.fillText(m>=1000?Math.round(m/1000)+'k':m,px(m)-6,pad.t+ch+14);
 
-  // Parabola
-  const t2=1-Math.min(sAnim,1);
-  const r=Math.round(43+(212-43)*(1-t2));
-  const gr=Math.round(191*t2+168*(1-t2));
-  const bl=Math.round(176*t2+67*(1-t2));
-  const col=`rgba(${r},${gr},${bl},0.85)`;
-  for(let pass=0;pass<2;pass++){
-    g.beginPath();
-    let first=true;
-    for(let p=xMin;p<=xMax;p+=0.02){
-      const y=sAnim*p*p-sAnim*p-1;
-      if(y<yMin-0.5||y>yMax+0.5){first=true;continue;}
-      const px=toX(p),py=toY(y);
-      if(first){g.moveTo(px,py);first=false;}else g.lineTo(px,py);
+  // Draw lines
+  const step=Math.max(1,Math.floor(M/600));
+  active.forEach(r=>{
+    ctx.beginPath();
+    let started=false;
+    for(let m=1;m<=M;m+=step){
+      const v=getV(m,r.key);
+      if(!isFinite(v)||v<-0.5){started=false;continue;}
+      const x=px(m),y=py(v);
+      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
     }
-    if(pass===0){g.strokeStyle=col.replace('0.85','0.2');g.lineWidth=8;}
-    else{g.strokeStyle=col;g.lineWidth=2.5;}
-    g.stroke();
-  }
-
-  // Prime dots
-  PRIMES.slice(0,8).forEach(p=>{
-    if(p>xMax)return;
-    const px=toX(p),axY=toY(0);
-    const grd2=g.createRadialGradient(px,axY,0,px,axY,18);
-    grd2.addColorStop(0,'rgba(42,184,168,.35)');grd2.addColorStop(1,'transparent');
-    g.fillStyle=grd2; g.beginPath(); g.arc(px,axY,18,0,2*Math.PI); g.fill();
-    g.fillStyle='rgba(42,184,168,.9)'; g.shadowColor='#2ab8a8'; g.shadowBlur=10;
-    g.beginPath(); g.arc(px,axY,4.5,0,2*Math.PI); g.fill(); g.shadowBlur=0;
-    g.fillStyle='rgba(42,184,168,.7)'; g.font='8px JetBrains Mono,monospace';
-    g.textAlign='center'; g.fillText('p='+p,px,axY-12);
-  });
-
-  // Current root marker
-  const pr=posRoot(sAnim);
-  if(pr>0&&pr<xMax){
-    const px=toX(pr),axY=toY(0);
-    // Pulsing rings
-    for(let ri=0;ri<3;ri++){
-      g.beginPath(); g.arc(px,axY,8+ri*5,0,2*Math.PI);
-      g.strokeStyle=`rgba(200,168,74,${0.5-ri*0.15})`; g.lineWidth=1.5; g.stroke();
+    // Always include current M
+    const lv=getV(M,r.key);
+    if(isFinite(lv)){
+      const x=px(M),y=py(lv);
+      if(started)ctx.lineTo(x,y);
     }
-    g.beginPath(); g.arc(px,axY,5,0,2*Math.PI);
-    g.fillStyle='#c8a84a'; g.shadowColor='#c8a84a'; g.shadowBlur=16; g.fill(); g.shadowBlur=0;
-    g.fillStyle='rgba(200,168,74,.9)'; g.font='bold 10px JetBrains Mono,monospace';
-    g.textAlign='center'; g.fillText('p₊ = '+pr.toFixed(4),px,axY-24);
+    ctx.strokeStyle=r.color;ctx.lineWidth=r.key==='cumC'?2.5:1.8;ctx.globalAlpha=.88;ctx.stroke();ctx.globalAlpha=1;
+    if(isFinite(lv)&&lv>=minV&&lv<=maxV){
+      ctx.beginPath();ctx.arc(px(M),py(lv),4,0,Math.PI*2);ctx.fillStyle=r.color;ctx.fill();
+    }
+  });
+
+  // Current M line
+  ctx.beginPath();ctx.moveTo(px(M),pad.t);ctx.lineTo(px(M),pad.t+ch);
+  ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=1;ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAW RING
+// ═══════════════════════════════════════════════════════════
+function drawRing(){
+  const canvas=document.getElementById('rc');
+  const wrap=document.getElementById('rw');
+  const W=(wrap.clientWidth-160)||300, H=wrap.clientHeight||240;
+  const dpr2=Math.min(window.devicePixelRatio||1,3);
+  canvas.width=W*dpr2;canvas.height=H*dpr2;
+  const ctx=canvas.getContext('2d');ctx.scale(dpr2,dpr2);
+  ctx.fillStyle='#07070b';ctx.fillRect(0,0,W,H);
+
+  const m=M, cx=W/2, cy=H/2, R=Math.min(W,H)*.41;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=1;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,R*.7,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.03)';ctx.stroke();
+
+  const showFull=m<=300;
+  const pts=showFull?m:Math.min(m,200);
+  const step=showFull?1:Math.ceil(m/200);
+
+  for(let r=1;r<=m;r+=step){
+    const ang=(r/m)*Math.PI*2-Math.PI/2;
+    const cM=gcd(r,m)===1, cM1=gcd(r,m+1)===1;
+    const x=cx+R*Math.cos(ang), y=cy+R*Math.sin(ang);
+    if(!cM){ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.08)';ctx.fill();}
+    else if(cM&&cM1){
+      ctx.beginPath();ctx.arc(x,y,showFull?3.5:2,0,Math.PI*2);ctx.fillStyle='#3dc8b8';ctx.fill();
+      if(showFull&&m<=60){
+        const a1=(r%(m+1))/(m+1)*Math.PI*2-Math.PI/2;
+        const x1=cx+R*.7*Math.cos(a1),y1=cy+R*.7*Math.sin(a1);
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x1,y1);ctx.strokeStyle='rgba(61,200,184,.18)';ctx.lineWidth=1;ctx.stroke();
+        ctx.beginPath();ctx.arc(x1,y1,2,0,Math.PI*2);ctx.fillStyle='#3dc8b8';ctx.globalAlpha=.4;ctx.fill();ctx.globalAlpha=1;
+      }
+    }else{ctx.beginPath();ctx.arc(x,y,showFull?2.8:1.8,0,Math.PI*2);ctx.fillStyle='#e05060';ctx.fill();}
   }
 
-  // Equation label
-  g.fillStyle='rgba(200,168,74,.5)'; g.font='10px JetBrains Mono,monospace';
-  g.textAlign='right';
-  g.fillText(`${sAnim.toFixed(4)}p² − ${sAnim.toFixed(4)}p − 1 = 0`, W-pad.r, pad.t+14);
-}
-
-// ─── SENTINEL SCENE ────────────────────────────────────────────
-function drawSentinelScene(g,W,H,t,si){
-  const cx=W/2, cy=H/2;
-  // Background: radial gold glow at φ position
-  const phiXn=cx+(PHI-3)*W*0.1;
-  const bgGrd=g.createRadialGradient(phiXn,cy,0,phiXn,cy,Math.min(W,H)*0.5);
-  bgGrd.addColorStop(0,'rgba(200,168,74,.06)');
-  bgGrd.addColorStop(1,'transparent');
-  g.fillStyle=bgGrd; g.fillRect(0,0,W,H);
-
-  // Number line
-  const y0=cy;
-  g.strokeStyle='rgba(255,255,255,.2)'; g.lineWidth=1;
-  g.beginPath(); g.moveTo(60,y0); g.lineTo(W-60,y0); g.stroke();
-
-  // Scale: 0 to 12 across width
-  const toX=v=>60+(v/12)*(W-120);
-
-  // Tick marks
-  for(let i=0;i<=12;i++){
-    const x=toX(i);
-    g.strokeStyle='rgba(255,255,255,.15)'; g.lineWidth=1;
-    g.beginPath(); g.moveTo(x,y0-5); g.lineTo(x,y0+5); g.stroke();
-    g.fillStyle='rgba(255,255,255,.2)'; g.font='9px JetBrains Mono,monospace';
-    g.textAlign='center'; g.fillText(i,x,y0+18);
+  if(m<=20){
+    for(let r=1;r<=m;r++){
+      if(gcd(r,m)!==1)continue;
+      const ang=(r/m)*Math.PI*2-Math.PI/2;
+      const lift=gcd(r,m+1)===1;
+      ctx.fillStyle=lift?'rgba(61,200,184,.8)':'rgba(224,80,96,.8)';
+      ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='center';
+      const lx=cx+(R+13)*Math.cos(ang),ly=cy+(R+13)*Math.sin(ang);
+      ctx.fillText(r,lx,ly+4);
+    }ctx.textAlign='left';
   }
 
-  // φ position
-  const phiX=toX(PHI);
-  const pulseAlpha=0.6+0.2*Math.sin(t*0.02);
-  // Glow band
-  const phiGrd=g.createLinearGradient(phiX-30,0,phiX+30,0);
-  phiGrd.addColorStop(0,'transparent');
-  phiGrd.addColorStop(0.5,`rgba(200,168,74,${0.15+0.05*Math.sin(t*0.015)})`);
-  phiGrd.addColorStop(1,'transparent');
-  g.fillStyle=phiGrd; g.fillRect(phiX-30,y0-80,60,160);
-
-  g.strokeStyle=`rgba(200,168,74,${pulseAlpha})`; g.lineWidth=2; g.setLineDash([6,4]);
-  g.beginPath(); g.moveTo(phiX,y0-90); g.lineTo(phiX,y0+50); g.stroke();
-  g.setLineDash([]);
-  g.fillStyle='rgba(200,168,74,.9)';
-  g.font='bold 2rem EB Garamond,serif'; g.textAlign='center';
-  g.fillText('φ', phiX, y0-60);
-  g.font='9px JetBrains Mono,monospace';
-  g.fillText('1.6180339887…', phiX, y0-34);
-  g.fillStyle='rgba(200,168,74,.4)'; g.font='8px JetBrains Mono,monospace';
-  g.fillText('UNREACHABLE', phiX, y0-18);
-
-  // Primes on the line
-  PRIMES.slice(0,10).forEach((p,i)=>{
-    if(toX(p)>W-80)return;
-    const x=toX(p);
-    // Approach animation: slide in from φ
-    const phase=opAnimating?Math.max(0,Math.min(1,(t*0.015-i*0.3))):1;
-    const drawX=phiX+(x-phiX)*phase;
-    const grd2=g.createRadialGradient(drawX,y0,0,drawX,y0,14);
-    grd2.addColorStop(0,'rgba(42,184,168,.4)'); grd2.addColorStop(1,'transparent');
-    g.fillStyle=grd2; g.beginPath(); g.arc(drawX,y0,14,0,2*Math.PI); g.fill();
-    g.fillStyle='rgba(42,184,168,.9)'; g.shadowColor='#2ab8a8'; g.shadowBlur=10;
-    g.beginPath(); g.arc(drawX,y0,5,0,2*Math.PI); g.fill(); g.shadowBlur=0;
-    g.fillStyle='rgba(42,184,168,.8)'; g.font='8.5px JetBrains Mono,monospace';
-    g.textAlign='center'; g.fillText('p='+p, drawX, y0-20);
-    // jump size below
-    g.fillStyle='rgba(200,168,74,.4)'; g.font='7px JetBrains Mono,monospace';
-    g.fillText('s=1/'+(p*(p-1)),drawX,y0+30);
-  });
-
-  // Label
-  g.fillStyle='rgba(42,184,168,.35)'; g.font='10px JetBrains Mono,monospace';
-  g.textAlign='center';
-  g.fillText('φ is the infimum of {p(s) : p prime} — permanently unreachable', W/2, 40);
-  g.fillStyle='rgba(200,168,74,.25)';
-  g.fillText('p(s) = (1 + √(1 + 4/s)) / 2   →   p(1) = φ', W/2, 56);
+  ctx.fillStyle='rgba(255,255,255,.55)';ctx.font='bold 12px JetBrains Mono,monospace';ctx.textAlign='center';
+  ctx.fillText(`M = ${m}`,cx,cy-7);
+  ctx.font='10px JetBrains Mono,monospace';ctx.fillStyle='#3dc8b8';
+  ctx.fillText(`${LIFTS[m]||0} lifts`,cx,cy+8);
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillText(`φ=${PHIV[m]||0}`,cx,cy+21);
+  ctx.textAlign='left';
 }
 
-// ─── IDENTITY SCENE ────────────────────────────────────────────
-function drawIdentityScene(g,W,H,t,si){
-  const cx=W/2, cy=H/2;
-  // Three orbiting terms
-  const terms=[
-    {label:'C',sub:'0.5307…',color:'var(--gold)',angle:0},
-    {label:'ζ(2)',sub:'π²/6 = 1.6449…',color:'#a0c8c0',angle:Math.PI*2/3},
-    {label:'d_FT',sub:'0.3226…',color:'#c0a0a0',angle:Math.PI*4/3},
-  ];
-  const R=Math.min(W,H)*0.28;
+// ═══════════════════════════════════════════════════════════
+// UPDATE DISPLAY
+// ═══════════════════════════════════════════════════════════
+function updateDisplay(){
+  prec=+document.getElementById('prec-sel').value;
+  if(computedUpTo<M) return;
+  const phi=PHIV[M], lft=LIFTS[M];
+  const cPhi=H[M*6+0],cLift=H[M*6+1],J=H[M*6+2],D0=H[M*6+3],T=H[M*6+4],zi=H[M*6+5];
+  const cumC=cLift/cPhi;
+  const a2=M<=5000?cpairs(2,M):null, a6=M<=5000?cpairs(6,M):null, a4=M<=5000?cpairs(4,M):null;
+  const a6a2=a2&&a6?a6/a2:NaN;
 
-  // Connection lines
-  terms.forEach(tr=>{
-    const ang=tr.angle+t*0.006;
-    const tx=cx+Math.cos(ang)*R, ty=cy+Math.sin(ang)*R;
-    g.strokeStyle='rgba(200,168,74,.12)'; g.lineWidth=1;
-    g.beginPath(); g.moveTo(cx,cy); g.lineTo(tx,ty); g.stroke();
-  });
+  document.getElementById('mod-num').textContent=M;
+  document.getElementById('mod-sl').value=M;
+  document.getElementById('hd-M').textContent=`M = ${M>=1000?M.toLocaleString():M}`;
+  document.getElementById('hd-C').textContent=`C → ${cumC.toFixed(8)}`;
+  document.getElementById('hd-phi').textContent=`φ/M → ${(phi/M).toFixed(6)}`;
 
-  // Center C
-  const grdC=g.createRadialGradient(cx,cy,0,cx,cy,70);
-  grdC.addColorStop(0,'rgba(200,168,74,.2)'); grdC.addColorStop(1,'transparent');
-  g.fillStyle=grdC; g.beginPath(); g.arc(cx,cy,70,0,2*Math.PI); g.fill();
-  g.fillStyle='rgba(200,168,74,.9)';
-  g.font='bold 2.5rem EB Garamond,serif'; g.textAlign='center'; g.textBaseline='middle';
-  g.fillText('C', cx, cy-10);
-  g.font='10px JetBrains Mono,monospace';
-  g.fillText('0.530711806246…', cx, cy+18);
+  document.getElementById('sg-phi').textContent=phi;
+  document.getElementById('sg-lft').textContent=lft;
+  document.getElementById('sg-a2').textContent=a2!==null?a2:'—';
+  document.getElementById('sg-a6').textContent=a6!==null?a6:'—';
+  document.getElementById('sg-a4').textContent=a4!==null?a4:'—';
+  document.getElementById('sg-r').textContent=!isNaN(a6a2)?a6a2.toFixed(4):'—';
 
-  // Orbiting nodes
-  terms.slice(1).forEach((tr,idx)=>{
-    const ang=tr.angle+t*0.006;
-    const tx=cx+Math.cos(ang)*R, ty=cy+Math.sin(ang)*R;
-    const col=idx===0?'rgba(42,184,168,.9)':'rgba(200,160,100,.7)';
-    const grd2=g.createRadialGradient(tx,ty,0,tx,ty,45);
-    grd2.addColorStop(0,idx===0?'rgba(42,184,168,.2)':'rgba(200,160,100,.1)');
-    grd2.addColorStop(1,'transparent');
-    g.fillStyle=grd2; g.beginPath(); g.arc(tx,ty,45,0,2*Math.PI); g.fill();
-    g.fillStyle=col;
-    g.font='bold 1.4rem EB Garamond,serif'; g.textBaseline='middle';
-    g.fillText(tr.label,tx,ty-8);
-    g.font='8.5px JetBrains Mono,monospace';
-    g.fillStyle='rgba(255,255,255,.5)';
-    g.fillText(tr.sub,tx,ty+12);
-  });
+  document.getElementById('ri-M').textContent=M;
+  document.getElementById('ri-phi').textContent=phi;
+  document.getElementById('ri-lft').textContent=lft;
 
-  // Equation at bottom
-  g.fillStyle='rgba(200,168,74,.35)'; g.font='11px JetBrains Mono,monospace';
-  g.textBaseline='bottom';
-  g.fillText('C = ζ(2) · d_FT = (π²/6) · ∏ₚ(1−2/p²) = ∏ₚ(p²−2)/(p²−1)', cx, H-30);
+  document.getElementById('prim-badge').classList.toggle('show',isPrimorial(M));
 
-  // Equals signs
-  const eqAlpha=0.4+0.2*Math.sin(t*0.02);
-  g.fillStyle=`rgba(200,168,74,${eqAlpha})`; g.font='bold 1.2rem EB Garamond,serif';
-  const ang0=0+t*0.006, ang1=Math.PI*4/3+t*0.006;
-  const mx=(cx+cx+Math.cos(ang0)*R)/2, my=(cy+cy+Math.sin(ang0)*R)/2;
-  const mx2=(cx+cx+Math.cos(ang1)*R)/2, my2=(cy+cy+Math.sin(ang1)*R)/2;
-  g.fillText('=', mx-12, my); g.fillText('×', mx2-12, my2);
-}
+  // Bottom strip
+  const f=(v,p=prec)=>isNaN(v)?'—':v.toFixed(p);
+  document.getElementById('bc-C').textContent=f(cumC);
+  document.getElementById('bc-phi').textContent=f(phi/M);
+  document.getElementById('bc-lft').textContent=f(phi?lft/phi:0);
+  document.getElementById('bc-J').textContent=f(J);
+  document.getElementById('bc-D0').textContent=f(D0);
+  document.getElementById('bc-T').textContent=f(T);
+  document.getElementById('bc-gap').textContent=!isNaN(a6a2)?f(a6a2,6):'—';
+  document.getElementById('bc-zeta').textContent=f(PI2_6*zi);
+  document.getElementById('bc-dt').textContent=Math.abs(J-(D0+T)).toExponential(4);
 
-// ─── OPENER ANIMATION LOOP ─────────────────────────────────────
-function opLoop(){
-  if(!opAnimating){opRAF=null;return;}
-  opTime+=Math.max(1,Math.round(opSpeedVal/4));
-  // Auto-step convergence
-  if(opPreset==='convergence'&&opTime%(Math.max(4,20-opSpeedVal))===0&&opStepIdx<steps.length) opStepIdx++;
-  drawOpener();
-  updateCards();
-  opRAF=requestAnimationFrame(opLoop);
-}
-
-function toggleOpenerAnim(){
-  opAnimating=!opAnimating;
-  document.getElementById('btn-op-anim').textContent=opAnimating?'⏸ Pause':'▶ Animate';
-  if(opAnimating) opLoop();
-}
-
-function toggleOpenerText(){
-  opTextVisible=!opTextVisible;
-  const el=document.getElementById('opener-text');
-  el.classList.toggle('hidden',!opTextVisible);
-  document.getElementById('btn-toggle-text').textContent=opTextVisible?'Hide text':'Show text';
-  // Show persistent controls when text is hidden
-  document.getElementById('hidden-controls').classList.toggle('show',!opTextVisible);
-}
-
-// ─── CONSTANT CARDS ────────────────────────────────────────────
-const cardContainer=document.getElementById('const-cards');
-const CARD_POSITIONS=[
-  {left:'5%',top:'18%'},{right:'5%',top:'18%'},
-  {left:'5%',bottom:'22%'},{right:'5%',bottom:'22%'},
-  {left:'50%',top:'8%',transform:'translateX(-50%)'},
-];
-
-function buildCards(){
-  cardContainer.innerHTML='';
-  const cfg=PRESET_CONFIGS[opPreset];
-  cfg.cards.forEach((ci,i)=>{
-    const c=CONSTANTS[ci];
-    const div=document.createElement('div');
-    div.className='ccard';
-    div.id='ccard-'+i;
-    const pos=CARD_POSITIONS[i]||CARD_POSITIONS[0];
-    Object.assign(div.style,pos);
-    div.style.cursor='pointer';
-    div.title='Click for derivation';
-    div.innerHTML=`<div class="ccard-label">${c.sym}</div><div class="ccard-val" style="color:${c.color}">${c.val}</div><div class="ccard-sub">${c.desc}</div><div style="font-family:var(--mono);font-size:6.5px;color:rgba(200,168,74,.35);margin-top:5px;letter-spacing:.08em;">click for formula →</div>`;
-    div.addEventListener('click',()=>openModal(ci));
-    cardContainer.appendChild(div);
-  });
-}
-
-function openModal(ci){
-  const c=CONSTANTS[ci];
-  document.getElementById('modal-sym').textContent=c.sym;
-  document.getElementById('modal-sym').style.color=c.color;
-  document.getElementById('modal-val').textContent=c.val;
-  document.getElementById('modal-val').style.color=c.color;
-  document.getElementById('modal-desc').textContent=c.desc;
-  document.getElementById('modal-formula').textContent=c.formula;
-  const deriv=document.getElementById('modal-derivation');
-  deriv.innerHTML=c.derivation.map((line,i)=>{
-    const isLast=i===c.derivation.length-1;
-    const isResult=line.includes('≈')||line.includes('OEIS')||line.includes('=0.')||line.includes('= 0.');
-    return `<span class="step${isResult?' highlight':''}">${line}</span>`;
-  }).join('');
-  document.getElementById('card-modal').classList.add('show');
-}
-
-function closeModal(){
-  document.getElementById('card-modal').classList.remove('show');
-}
-
-function updateCards(){
-  const cfg=PRESET_CONFIGS[opPreset];
-  cfg.cards.forEach((ci,i)=>{
-    const el=document.getElementById('ccard-'+i);
+  // Ratio values in sidebar
+  RATIOS.forEach(r=>{
+    const el=document.getElementById('rv-'+r.key);
     if(!el)return;
-    const delay=i*400+200;
-    if(!el._shown){
-      setTimeout(()=>{el.classList.add('show');el._shown=true;},delay);
-    }
+    const v=getV(M,r.key);
+    el.textContent=isNaN(v)?'—':v.toFixed(prec);
   });
-}
 
-function showCardsNow(){
-  document.querySelectorAll('.ccard').forEach((el,i)=>{
-    setTimeout(()=>{el.classList.add('show');el._shown=true;},i*300);
-  });
-}
-
-function hideCards(){
-  document.querySelectorAll('.ccard').forEach(el=>{
-    el.classList.remove('show');el._shown=false;
-  });
-}
-
-// ─── PRESET SYSTEM ─────────────────────────────────────────────
-function setPreset(name){
-  opPreset=name;
-  opStepIdx=0;
-  opTime=0;
-  document.querySelectorAll('.preset-pill').forEach(b=>{
-    b.classList.toggle('active',b.textContent.toLowerCase().includes(name.substr(0,4)));
-  });
-  hideCards();
-  buildCards();
-  setTimeout(showCardsNow,400);
-  drawOpener();
-}
-
-function launchPreset(name){
-  // Show opener with specific preset + text hidden + animating
-  document.getElementById('opener').classList.remove('hidden');
-  document.getElementById('page-content').style.display='none';
-  setPreset(name);
-  opTextVisible=false;
-  document.getElementById('opener-text').classList.add('hidden');
-  document.getElementById('btn-toggle-text').textContent='Show text';
-  if(!opAnimating) toggleOpenerAnim();
-}
-
-// ─── OPENER CONTROLS ───────────────────────────────────────────
-function enterPage(){
-  document.getElementById('opener').classList.add('hidden');
-  document.getElementById('page-content').style.display='block';
-  // Trigger reveal observer
-  setTimeout(()=>document.querySelectorAll('.reveal').forEach(el=>io.observe(el)),100);
-  // Init section canvas
-  setTimeout(resizeCanvas,200);
-}
-
-function reopenOpener(){
-  document.getElementById('opener').classList.remove('hidden');
-  document.getElementById('page-content').style.display='none';
-}
-
-function toggleOpenerFS(){
-  const op=document.getElementById('opener');
-  if(!document.fullscreenElement){
-    op.requestFullscreen&&op.requestFullscreen();
-  } else {
-    document.exitFullscreen&&document.exitFullscreen();
+  // Update popup if open
+  if(activeRatioKey){
+    const v=getV(M,activeRatioKey);
+    const r=RATIOS.find(x=>x.key===activeRatioKey);
+    document.getElementById('pop-M').textContent=M;
+    document.getElementById('pop-val').textContent=isNaN(v)?'—':v.toFixed(prec);
+    if(r&&!isNaN(v)) document.getElementById('pop-dist').textContent=Math.abs(v-r.target).toExponential(6);
   }
 }
 
-function exportOpenerPNG(){
-  drawOpener();
-  const link=document.createElement('a');
-  link.download='master_key_opener_'+opPreset+'.png';
-  link.href=opCv.toDataURL('image/png');
-  link.click();
+function addTableRow(m){
+  const phi=PHIV[m], lft=LIFTS[m];
+  const cLift=H[m*6+1],cPhi=H[m*6+0],J=H[m*6+2];
+  const cumC=cLift/cPhi;
+  const a2=m<=2000?cpairs(2,m):null, a6=m<=2000?cpairs(6,m):null;
+  const a6a2=a2&&a6?a6/a2:NaN;
+  const isPrim=isPrimorial(m);
+  const tbody=document.getElementById('tb');
+  const tr=document.createElement('tr');
+  if(isPrim)tr.className='prow';
+  tr.innerHTML=`<td>${m}${isPrim?'<span style="color:var(--gold)">★</span>':''}</td>
+    <td>${phi}</td><td style="color:var(--teal)">${(phi/m).toFixed(5)}</td>
+    <td>${lft}</td><td>${phi?(lft/phi).toFixed(5):'—'}</td>
+    <td style="color:var(--gold2)">${cumC.toFixed(10)}</td>
+    <td>${a2!==null?a2:'—'}</td><td>${a6!==null?a6:'—'}</td>
+    <td class="${!isNaN(a6a2)&&Math.abs(a6a2-2)<.01?'ok':''}">${!isNaN(a6a2)?a6a2.toFixed(4):'—'}</td>
+    <td style="color:var(--violet)">${J.toFixed(8)}</td>
+    <td style="color:var(--gold)">${isPrim?'p#':isPrimeN(m)?'p':''}</td>`;
+  tbody.insertBefore(tr,tbody.firstChild);
+  while(tbody.children.length>150)tbody.removeChild(tbody.lastChild);
 }
 
-function exportConstantsCSV(){
-  const rows=['Symbol,Value,Description'];
-  CONSTANTS.forEach(c=>rows.push(`"${c.sym}","${c.val}","${c.desc}"`));
-  // Add some step data
-  rows.push('');
-  rows.push('Prime p,Jump s,C(x) after jump,Recovered p(s)');
-  steps.slice(0,100).forEach(({p,cx,s})=>rows.push(`${p},${s},${cx},${posRoot(s).toFixed(12)}`));
-  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
-  const link=document.createElement('a');
-  link.href=URL.createObjectURL(blob);
-  link.download='lift_survival_constants.csv';
-  link.click();
+// ═══════════════════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════════════════
+function setM(newM){
+  newM=Math.max(1,Math.min(computedUpTo,newM));
+  M=newM;
+  updateDisplay();
+  drawMain();
+  drawRing();
 }
-
-// ─── SECTION C(x) CANVAS ───────────────────────────────────────
-const cv=document.getElementById('cx-canvas');
-const g2=cv.getContext('2d');
-let W2,H2,stepIdx=0,playing=false,playRAF2=null;
-
-function resizeCanvas(){
-  const rect=cv.parentElement.getBoundingClientRect();
-  W2=rect.width; H2=340;
-  cv.width=W2*devicePixelRatio; cv.height=H2*devicePixelRatio;
-  cv.style.width=W2+'px'; cv.style.height=H2+'px';
-  drawSection();
-}
-
-function drawSection(){
-  if(!W2)return;
-  // Reuse convergence scene draw but on section canvas
-  g2.save(); g2.scale(devicePixelRatio,devicePixelRatio);
-  drawConvergenceScene(g2,W2,H2,0,stepIdx);
-  g2.restore();
-}
-
-function updateStats(){
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  if(stepIdx===0){
-    ['stat-prime','stat-cx','stat-s','stat-diff'].forEach(id=>set(id,'—'));
-    set('stat-n','0'); return;
-  }
-  const idx=Math.min(stepIdx,steps.length)-1;
-  const {p,cx,s}=steps[idx];
-  set('stat-prime','p = '+p);
-  set('stat-cx',cx.toFixed(14));
-  set('stat-s','s = '+s.toFixed(12));
-  set('stat-diff','|C(x)−C∞| = '+(Math.abs(cx-C_INF)).toExponential(4));
-  set('stat-n',stepIdx);
-}
-
-function stepNext(){if(stepIdx<steps.length){stepIdx++;drawSection();updateStats();}}
-function stepAll(){stepIdx=steps.length;drawSection();updateStats();}
-
-function resetAnim(){
-  if(playing){playing=false;cancelAnimationFrame(playRAF2);playRAF2=null;}
-  document.getElementById('btn-play').textContent='▶ Animate';
-  stepIdx=0; drawSection(); updateStats();
-}
+function stepM(d){setM(M+d);}
 
 function togglePlay(){
   playing=!playing;
-  document.getElementById('btn-play').textContent=playing?'⏸ Pause':'▶ Animate';
-  if(playing) doPlay();
+  const btn=document.getElementById('play-btn');
+  btn.textContent=playing?'Pause':'Play';
+  btn.className='btn '+(playing?'on':'primary');
+  if(playing)playStep();else clearTimeout(playTimer);
 }
-
-function doPlay(){
+function playStep(){
   if(!playing)return;
-  if(stepIdx>=steps.length){playing=false;document.getElementById('btn-play').textContent='▶ Animate';return;}
-  const spd=parseInt(document.getElementById('anim-speed')?.value||5);
-  document.getElementById('speed-label').textContent=spd;
-  for(let i=0;i<Math.max(1,Math.round(spd/3))&&stepIdx<steps.length;i++) stepIdx++;
-  drawSection(); updateStats();
-  playRAF2=requestAnimationFrame(doPlay);
+  if(M>=computedUpTo){playing=false;document.getElementById('play-btn').textContent='Play';document.getElementById('play-btn').className='btn primary';return;}
+  const step=M<1000?1:M<10000?5:M<50000?20:50;
+  setM(M+step);
+  addTableRow(M);
+  if(playSpeed===0)requestAnimationFrame(playStep);
+  else playTimer=setTimeout(playStep,playSpeed);
 }
-
-document.getElementById('anim-speed')?.addEventListener('input',function(){
-  document.getElementById('speed-label').textContent=this.value;
-});
-
-function exportSectionPNG(){
-  drawSection();
-  const link=document.createElement('a');
-  link.download='cx_descent.png';
-  link.href=cv.toDataURL('image/png');
-  link.click();
-}
-
-function exportStepsCSV(){
-  const rows=['Prime p,Jump s=1/p(p-1),C(x) after jump,Recovered p(s),Distance to C_inf'];
-  steps.forEach(({p,cx,s})=>{
-    rows.push(`${p},${s},${cx},${posRoot(s).toFixed(12)},${Math.abs(cx-C_INF)}`);
+function setSpeed(ms){
+  playSpeed=ms;
+  document.querySelectorAll('.btn').forEach(b=>{
+    if(['Slow','Med','Fast','Max'].includes(b.textContent))b.classList.remove('on');
   });
-  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
-  const link=document.createElement('a');
-  link.href=URL.createObjectURL(blob);
-  link.download='cx_steps.csv';
-  link.click();
+  const labels={200:'Slow',40:'Med',8:'Fast',0:'Max'};
+  document.querySelectorAll('.btn').forEach(b=>{if(b.textContent===labels[ms])b.classList.add('on');});
 }
+function bcSel(i){document.querySelectorAll('.bc').forEach((c,j)=>c.classList.toggle('active',j===i));}
 
-// ─── FULLSCREEN C(x) ───────────────────────────────────────────
-const fsCv=document.getElementById('fs-canvas');
-const fsG=fsCv.getContext('2d');
-let fsW,fsH,fsIdx=0,fsPlaying=false,fsRAF=null;
-
-function openFS(){
-  const overlay=document.getElementById('fs-overlay');
-  overlay.classList.add('show');
-  fsIdx=stepIdx;
-  setTimeout(resizeFS,60);
-}
-
-function resizeFS(){
-  fsW=fsCv.offsetWidth; fsH=fsCv.offsetHeight;
-  fsCv.width=fsW*devicePixelRatio; fsCv.height=fsH*devicePixelRatio;
-  drawFS();
-}
-
-function drawFS(){
-  if(!fsW)return;
-  fsG.save(); fsG.scale(devicePixelRatio,devicePixelRatio);
-  fsG.fillStyle=PRESET_CONFIGS.convergence.bg; fsG.fillRect(0,0,fsW,fsH);
-  drawConvergenceScene(fsG,fsW,fsH,0,fsIdx);
-  fsG.restore();
-}
-
-function fsPLay(){
-  fsPlaying=!fsPlaying;
-  document.getElementById('fs-play').textContent=fsPlaying?'⏸ Pause':'▶ Animate';
-  if(fsPlaying) fsPlayLoop();
-}
-function fsPlayLoop(){
-  if(!fsPlaying)return;
-  if(fsIdx>=steps.length){fsPlaying=false;document.getElementById('fs-play').textContent='▶ Animate';return;}
-  const spd=parseInt(document.getElementById('fs-speed')?.value||5);
-  for(let i=0;i<Math.max(1,Math.round(spd/3))&&fsIdx<steps.length;i++) fsIdx++;
-  drawFS();
-  fsRAF=requestAnimationFrame(fsPlayLoop);
-}
-function fsReset(){fsPlaying=false;if(fsRAF)cancelAnimationFrame(fsRAF);fsIdx=0;drawFS();}
-function fsStep(){if(fsIdx<steps.length){fsIdx++;drawFS();}}
-function fsAll(){fsIdx=steps.length;drawFS();}
-function closeFS(){
-  document.getElementById('fs-overlay').classList.remove('show');
-  if(fsPlaying){fsPlaying=false;if(fsRAF)cancelAnimationFrame(fsRAF);}
-  // Sync back
-  stepIdx=fsIdx; drawSection(); updateStats();
-}
-function exportFSPNG(){
-  drawFS();
-  const link=document.createElement('a');
-  link.download='cx_descent_fullscreen.png';
-  link.href=fsCv.toDataURL('image/png');
-  link.click();
-}
-
-window.addEventListener('resize',()=>{
-  setTimeout(resizeOpener,80);
-  if(document.getElementById('fs-overlay').classList.contains('show')) setTimeout(resizeFS,80);
-});
-
-// ─── JUMP TABLE ────────────────────────────────────────────────
-(function buildJumpTable(){
-  const tbody=document.getElementById('jump-tbody');
-  if(!tbody)return;
-  let cx=1.0;
-  [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47].forEach(p=>{
-    cx*=(p*p-2)/(p*p-1);
-    const s=jumpSize(p);
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="p">${p}</td><td>${p-1}</td><td class="s">${s.toFixed(10)}</td><td class="cx">${cx.toFixed(12)}</td><td class="p">${posRoot(s).toFixed(10)}</td>`;
-    tbody.appendChild(tr);
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  buildRatioList();
+  precompute(()=>{
+    // Precompute done
+    M=30;
+    // Seed table with first 30
+    for(let m=1;m<=30;m++) addTableRow(m);
+    updateDisplay();
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      drawMain(); drawRing(); buildClabels();
+    }));
   });
-})();
-
-// ─── SCROLL REVEAL ─────────────────────────────────────────────
-const io=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
-},{threshold:.1});
-
-// ─── INIT ──────────────────────────────────────────────────────
-resizeOpener();
-buildCards();
-setTimeout(showCardsNow,800);
-
-// Keyboard
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') closeModal();
 });
-
-// Scroll-wheel zoom on opener canvas
-opCv.addEventListener('wheel',e=>{
-  e.preventDefault();
-  const delta=e.deltaY>0?-0.05:0.05;
-  opZoom=Math.max(0.4,Math.min(4,opZoom+delta));
-  const pct=Math.round(opZoom*100);
-  const sl=document.getElementById('hc-zoom');
-  const vl=document.getElementById('hc-zoom-v');
-  if(sl){sl.value=pct;}
-  if(vl){vl.textContent=pct+'%';}
-  drawOpener();
-},{passive:false});
-
-// Start opener animation
-setTimeout(()=>{
-  opAnimating=true;
-  document.getElementById('btn-op-anim').textContent='⏸ Pause';
-  opLoop();
-},600);
+window.addEventListener('resize',()=>{drawMain();drawRing();},{passive:true});
 </script>
 </body>
 </html>
