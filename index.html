@@ -245,7 +245,7 @@ body.op-active{overflow:hidden;}
   transition:opacity 1s ease,visibility 1s ease;
 }
 #opener.gone{opacity:0;visibility:hidden;pointer-events:none;}
-#opener-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+#opener-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;}
 .op-content{
   position:relative;z-index:2;text-align:center;
   padding:0 clamp(24px,5vw,80px);
@@ -344,14 +344,20 @@ body.op-active{overflow:hidden;}
 <div id="opener">
   <canvas id="opener-canvas"></canvas>
 
-  <!-- Controls — top left -->
+  <!-- Controls -->
   <div id="op-controls">
-    <div class="opc-row" style="margin-bottom:8px;">
+    <div class="opc-row" style="margin-bottom:6px;">
       <button class="opc-btn active" id="op-text-btn" onclick="opToggleAllText(this)">Text</button>
       <button class="opc-btn active" onclick="opToggleGhosts(this)">Ghost eqs</button>
-      <button class="opc-btn active" onclick="opToggleCurve(this)">F(u)</button>
-      <button class="opc-btn active" id="op-lift-direct-btn" onclick="opToggleLiftDirect(this)">Lifts →</button>
-      <button class="opc-btn active" id="op-lift-btn" onclick="opToggleLiftLines(this)">Lifts r+M·2ⁿ</button>
+      <button class="opc-btn" id="op-pause-btn" onclick="if(window._opPauseToggle)window._opPauseToggle(this)">Pause</button>
+    </div>
+    <div class="opc-row" style="margin-bottom:6px;">
+      <button class="opc-btn active" id="op-lift-direct-btn" onclick="opToggleLiftDirect(this)" title="Straight: same r, outer ring — teal">Direct r→r</button>
+      <button class="opc-btn active" id="op-lift-btn" onclick="opToggleLiftLines(this)" title="Modular: r mod M_next — amber/red">r+M·2ⁿ</button>
+    </div>
+    <div class="opc-row" style="margin-bottom:8px;">
+      <button class="opc-btn" onclick="if(window._opAnchor)window._opAnchor()" title="Freeze all rings' current position as 0°">⊙ Anchor</button>
+      <button class="opc-btn" onclick="if(window._opResetAnchor)window._opResetAnchor()" title="Reset rotation to 0° and clear anchors">↺ Reset to 0°</button>
     </div>
 
     <div class="opc-sep"></div>
@@ -370,7 +376,7 @@ body.op-active{overflow:hidden;}
 
     <div class="opc-row" style="align-items:center;gap:8px;margin-top:6px;">
       <span class="opc-val">M =</span>
-      <input type="number" id="op-mod-input" min="2" max="9999" value="6"
+      <input type="number" id="op-mod-input" min="1" max="9999" value="30"
         style="width:58px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--gold);font-family:var(--mono);font-size:11px;padding:3px 6px;text-align:center;"
         onchange="opSetMod(this.value)" onkeydown="if(event.key==='Enter')opSetMod(this.value)">
       <span class="opc-val" id="op-mod-pts">— pts</span>
@@ -408,9 +414,8 @@ body.op-active{overflow:hidden;}
 
   <!-- Corner details -->
   <div class="op-corner tl" id="op-author">Wessen Getachew</div>
-  <div class="op-corner bl" id="op-rings">M = 6 &middot; 30 &middot; 210 &middot; 2310</div>
+  <div class="op-corner bl" id="op-rings">M = 30 &middot; 60 &middot; 120 &middot; 240</div>
   <div class="op-corner br" id="op-c">C &asymp; 0.530711&hellip;</div>
-</div>
 </div>
 
 <div id="nav" class="hidden">
@@ -1081,193 +1086,307 @@ window._selectedRing = 0;
 window._opSpeed = 1.0;
 window._opTrail = 0.22;
 window._opGhosts = true;
-window._opCurve = true;
+
 window._opLiftLines = true;
 window._opLiftDirect = true;
 
 // ═══════════════════════════════════════════════════════════
-// OPENER — 2D RINGS
+// ═══════════════════════════════════════════════════════════
+// OPENER
 // ═══════════════════════════════════════════════════════════
 (function(){
   const canvas = document.getElementById('opener-canvas');
-  let af, t = 0;
+  let af, t = 0, paused = false;
 
   function gcd(a,b){while(b){const x=b;b=a%b;a=x;}return a;}
+  function makePts(m){
+    const pts=[], g=gcd;
+    for(let r=1;r<=m;r++) if(g(r,m)===1) pts.push({r,lifts:g(r,m+1)===1});
+    return pts;
+  }
+  // radius for background ring m: 2*pi*r/m → scale to canvas
+  function bgR(m, minD){ return (m/(128+1))*minD*0.48; }
 
-  const RINGS = [
-    {mod:6,    rf:0.09, speed: 0.0003,  dir: 1},
-    {mod:30,   rf:0.17, speed: 0.00018, dir:-1},
-    {mod:210,  rf:0.27, speed: 0.0001,  dir: 1},
-    {mod:2310, rf:0.38, speed: 0.00005, dir:-1},
+  // Active rings defaults
+  const DIRS=[1,-1,1,-1,1,-1,1,-1,1,-1];
+  const BSPD=[0.00028,0.00018,0.00011,0.00007];
+  function makeRing(mod,idx,total){
+    const rf=0.10+(0.44-0.10)*(idx/Math.max(total-1,1));
+    return {mod,rf,speed:BSPD[idx]||Math.max(0.00003,0.00028*Math.pow(0.65,idx)),
+      dir:DIRS[idx%2],pts:makePts(mod),liftProgress:0,
+      liftFrom:(mod<=128?(mod/129)*0.48:0.46),_anchor:0};
+  }
+  const DEF=[30,60,120,240];
+  const RINGS=DEF.map((m,i)=>makeRing(m,i,DEF.length));
+  window._opRings=RINGS;
+  function animLift(ring){
+    if(ring.liftProgress>=1){ring.liftProgress=1;return;}
+    ring.liftProgress=Math.min(1,ring.liftProgress+0.022);
+    requestAnimationFrame(()=>animLift(ring));
+  }
+  RINGS.forEach((r,i)=>setTimeout(()=>animLift(r),300+i*250));
+
+  // Anchor: pin gcd residues at 0°; Reset: zero all rotation
+  window._opAnchor=function(){
+    const spd=window._opSpeed||1;
+    window._opRings.forEach(ring=>{
+      ring._anchor=t*ring.speed*ring.dir*spd;
+    });
+  };
+  window._opResetAnchor=function(){
+    t=0; // reset time — stops "where we are" and goes to 0°
+    window._opRings.forEach(ring=>{ ring._anchor=0; });
+  };
+  window._opPauseToggle=function(btn){
+    paused=!paused;
+    if(!paused) draw();
+    if(btn) btn.classList.toggle('active',paused);
+  };
+
+  // Ghost equations
+  const GHOSTS=[
+    '\u03b6(2)=\u03c0\u00b2/6','F(1)=1','C\u22480.5307','J=P(2)+T',
+    '\u220f(p\u00b2\u2212u)/(p\u00b2\u22121)','gcd(r,M)=1','S=\u03a3P(2k)',
+    '\u03c6=(1+\u221a5)/2','A(6)/A(2)=2',"F'(1)=\u2212S",
+    'Q=S\u2212P(2)','U=J\u2212S','zeros@p\u00b2','M\u00f6bius@u=1',
   ];
-  // Expose for live editing from control panel
-  window._opRings = RINGS;
-
-  RINGS.forEach(ring => {
-    ring.pts = [];
-    for(let r=1; r<=ring.mod; r++){
-      if(gcd(r,ring.mod)!==1) continue;
-      ring.pts.push({r, lifts: gcd(r,ring.mod+1)===1});
-    }
-  });
-
-  const GHOSTS = [
-    '\u03b6(2) = \u03c0\u00b2/6','F(1) = 1','C \u2248 0.5307','J = P(2) + T',
-    '\u220f(p\u00b2\u2212u)/(p\u00b2\u22121)','gcd(r,M) = 1','S = \u03a3P(2k)','\u03c6 = (1+\u221a5)/2',
-    'A(6,M)/A(2,M) = 2','F\u2032(1) = \u2212S','Q = S \u2212 P(2)','U = J \u2212 S',
-    'zeros at p\u00b2','C = \u03b6(2)\u00b7(2C_FT\u22121)','M\u00f6bius at u = 1',
-  ];
-  const ghosts = GHOSTS.map(txt => ({
-    txt,
-    x: Math.random(),
-    y: 0.05 + Math.random()*0.9,
-    vx: (Math.random()-0.5)*0.00009,
-    vy: (Math.random()-0.5)*0.00004,
-    a:  0.025 + Math.random()*0.04,
-    sz: 9 + Math.random()*4,
+  const ghosts=GHOSTS.map(txt=>({
+    txt,x:Math.random(),y:0.05+Math.random()*0.9,
+    vx:(Math.random()-0.5)*0.00009,vy:(Math.random()-0.5)*0.00004,
+    a:0.02+Math.random()*0.03,sz:9+Math.random()*4,
   }));
 
-  const sv=new Uint8Array(120).fill(1);sv[0]=sv[1]=0;
-  for(let i=2;i*i<120;i++) if(sv[i]) for(let j=i*i;j<120;j+=i) sv[j]=0;
-  const PR=[];for(let i=2;i<120;i++) if(sv[i]) PR.push(i);
-  function Fv(u){let p=1;for(const q of PR){const f=(q*q-u)/(q*q-1);if(f<=0)return 0;p*=f;}return p;}
-
   let W=0,H=0,cx=0,cy=0,minD=0;
-
   function resize(){
     W=canvas.clientWidth||window.innerWidth;
     H=canvas.clientHeight||window.innerHeight;
     const dpr=Math.min(window.devicePixelRatio||1,2);
-    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.width=W*dpr;canvas.height=H*dpr;
     canvas.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
-    cx=W/2; cy=H/2; minD=Math.min(W,H);
+    cx=W/2;cy=H/2;minD=Math.min(W,H);
+    selectedPoints=[];tooltip=null;
   }
+
+  // ── CLICK INTERACTION ──
+  let selectedPoints=[]; // [{ri,rv,x,y}]
+  let tooltip=null;      // {text,x,y}
+
+  function canvasXY(e){
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=W/rect.width, scaleY=H/rect.height;
+    return {
+      x:(e.clientX-rect.left)*scaleX,
+      y:(e.clientY-rect.top)*scaleY
+    };
+  }
+
+  // canvas has pointer-events:none — listen on opener div, skip control/button clicks
+  document.getElementById('opener').addEventListener('click',function(e){
+    if(e.target.closest('#op-controls')||e.target.closest('.op-enter')||e.target.closest('.op-corner')) return;
+    const {x:mx,y:my}=canvasXY(e);
+    const spd=window._opSpeed||1;
+    let hit=null, bestD=12;
+    window._opRings.forEach((ring,ri)=>{
+      const prog=ring.liftProgress||1;
+      const r=(ring.liftFrom+(ring.rf-ring.liftFrom)*prog)*minD;
+      const ang0=t*ring.speed*ring.dir*spd-(ring._anchor||0);
+      ring.pts.forEach(({r:rv,lifts})=>{
+        const a=(rv/ring.mod)*Math.PI*2+ang0;
+        const px=cx+r*Math.cos(a), py=cy+r*Math.sin(a);
+        const d=Math.hypot(mx-px,my-py);
+        if(d<bestD){bestD=d;hit={ri,rv,lifts,px,py,r:ring,mod:ring.mod,a,deg:((a%(Math.PI*2)+Math.PI*2)%(Math.PI*2))*180/Math.PI};}
+      });
+    });
+    if(hit){
+      // Check if already selected
+      const idx=selectedPoints.findIndex(p=>p.ri===hit.ri&&p.rv===hit.rv);
+      if(idx>=0){
+        selectedPoints.splice(idx,1);
+      } else {
+        selectedPoints.push({ri:hit.ri,rv:hit.rv,lifts:hit.lifts,mod:hit.mod});
+      }
+      tooltip={
+        text:`M=${hit.mod}  r=${hit.rv}  ${hit.lifts?'lifts':'stays'}  ${hit.deg.toFixed(1)}°`,
+        x:hit.px, y:hit.py-14
+      };
+    } else {
+      tooltip=null;
+    }
+  });
 
   function draw(){
     if(!W) resize();
+    if(paused){return;}
     const ctx=canvas.getContext('2d');
-    const spd=window._opSpeed;
+    const spd=window._opSpeed||1;
 
-    ctx.fillStyle=`rgba(2,2,5,${window._opTrail})`;
+    ctx.fillStyle=`rgba(2,2,5,${window._opTrail||0.22})`;
     ctx.fillRect(0,0,W,H);
 
+    // ── BACKGROUND LATTICE: mod 1–128, radius ∝ 2πr/m ──
+    for(let m=1;m<=128;m++){
+      const isActive=window._opRings.some(r=>r.mod===m&&r.liftProgress>0.9);
+      if(isActive) continue;
+      const r=bgR(m,minD);
+      if(r<2) continue;
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle='rgba(200,168,74,0.018)';ctx.lineWidth=0.4;ctx.stroke();
+      const pts=makePts(m);
+      const a0=t*0.000025*(m%2?1:-1)*spd;
+      pts.forEach(({r:rv,lifts})=>{
+        const a=(rv/m)*Math.PI*2+a0;
+        const x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);
+        ctx.beginPath();ctx.arc(x,y,0.6,0,Math.PI*2);
+        ctx.fillStyle=lifts?'rgba(61,200,184,0.06)':'rgba(224,80,96,0.035)';
+        ctx.fill();
+      });
+    }
+
+    // ── GHOST TEXT ──
     if(window._opGhosts){
       ctx.save();
       ghosts.forEach(g=>{
-        g.x+=g.vx*spd; g.y+=g.vy*spd;
-        if(g.x<-0.2) g.x=1.1; if(g.x>1.1) g.x=-0.2;
-        if(g.y<0.02) g.vy=Math.abs(g.vy); if(g.y>0.98) g.vy=-Math.abs(g.vy);
-        ctx.globalAlpha=g.a;
-        ctx.fillStyle='#c8a84a';
+        g.x+=g.vx*spd;g.y+=g.vy*spd;
+        if(g.x<-0.15)g.x=1.05;if(g.x>1.05)g.x=-0.15;
+        if(g.y<0.02)g.vy=Math.abs(g.vy);if(g.y>0.98)g.vy=-Math.abs(g.vy);
+        ctx.globalAlpha=g.a;ctx.fillStyle='#c8a84a';
         ctx.font=`${g.sz}px JetBrains Mono,monospace`;
         ctx.fillText(g.txt,g.x*W,g.y*H);
       });
       ctx.restore();
     }
 
-    RINGS.forEach((ring,ri)=>{
-      const r=ring.rf*minD;
-      const ang0=t*ring.speed*ring.dir*spd;
-      ctx.beginPath();
-      ctx.arc(cx,cy,r,0,Math.PI*2);
-      // Highlight selected ring
-      const isSel = ri === (window._selectedRing||0);
-      ctx.strokeStyle = isSel
-        ? `rgba(61,200,184,${0.22+ri*0.03})`
-        : `rgba(200,168,74,${0.05+ri*0.02})`;
-      ctx.lineWidth = isSel ? 1.5 : 1;
-      ctx.stroke();
-
-      ring.pts.forEach(({r:rv,lifts})=>{
-        const a=(rv/ring.mod)*Math.PI*2+ang0;
-        const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
-        const sz=lifts?(ri===0?3.5:ri===1?2.8:ri===2?2.2:1.8):(ri===0?2.2:ri===1?1.8:1.4);
-        if(lifts){
-          const g2=ctx.createRadialGradient(x,y,0,x,y,sz*4);
-          g2.addColorStop(0,'rgba(61,200,184,0.18)');
-          g2.addColorStop(1,'rgba(61,200,184,0)');
-          ctx.beginPath();ctx.arc(x,y,sz*4,0,Math.PI*2);ctx.fillStyle=g2;ctx.fill();
-          ctx.beginPath();ctx.arc(x,y,sz,0,Math.PI*2);ctx.fillStyle='rgba(61,200,184,0.85)';ctx.fill();
-
-          // Direct lift line: r on ring i → same angular position on ring i+1
-          if(window._opLiftDirect && ri<RINGS.length-1){
-            const nr=RINGS[ri+1];
-            const na=(rv/nr.mod)*Math.PI*2+t*nr.speed*nr.dir*spd;
-            ctx.beginPath();ctx.moveTo(x,y);
-            ctx.lineTo(cx+nr.rf*minD*Math.cos(na),cy+nr.rf*minD*Math.sin(na));
-            ctx.strokeStyle='rgba(61,200,184,0.07)';ctx.lineWidth=0.7;ctx.stroke();
-          }
-
-          // Modular lift: r → r mod M_next (r + M·2ⁿ path)
-          if(window._opLiftLines && ri<RINGS.length-1){
-            const nr=RINGS[ri+1];
-            const nAng0=t*nr.speed*nr.dir*spd;
-            const gc=(a,b)=>{while(b){const x=b;b=a%b;a=x;}return a;};
-            const target=rv%nr.mod===0?nr.mod:rv%nr.mod;
-            const targetLifts=gc(target,nr.mod)===1&&gc(target,nr.mod+1)===1;
-            const tAng=(target/nr.mod)*Math.PI*2+nAng0;
-            const tx=cx+nr.rf*minD*Math.cos(tAng);
-            const ty=cy+nr.rf*minD*Math.sin(tAng);
-            const mx=(x+tx)/2-(y-ty)*0.15;
-            const my=(y+ty)/2+(x-tx)*0.15;
-            ctx.beginPath();ctx.moveTo(x,y);
-            ctx.quadraticCurveTo(mx,my,tx,ty);
-            ctx.strokeStyle=targetLifts?'rgba(61,200,184,0.18)':'rgba(232,180,80,0.14)';
-            ctx.lineWidth=0.8;ctx.stroke();
-            ctx.beginPath();ctx.arc(tx,ty,1.5,0,Math.PI*2);
-            ctx.fillStyle=targetLifts?'rgba(61,200,184,0.5)':'rgba(232,180,80,0.4)';
-            ctx.fill();
-          }
-        } else {
-          ctx.beginPath();ctx.arc(x,y,sz*0.85,0,Math.PI*2);
-          ctx.fillStyle='rgba(224,80,96,0.32)';ctx.fill();
+    // ── ACTIVE RINGS ──
+    // First pass: collect current screen positions for selected points
+    const selScreen={}; // key="ri:rv" -> {x,y}
+    window._opRings.forEach((ring,ri)=>{
+      const prog=ring.liftProgress||1;
+      const r=(ring.liftFrom+(ring.rf-ring.liftFrom)*prog)*minD;
+      const ang0=t*ring.speed*ring.dir*spd-(ring._anchor||0);
+      ring.pts.forEach(({r:rv})=>{
+        const key=`${ri}:${rv}`;
+        if(selectedPoints.some(p=>p.ri===ri&&p.rv===rv)){
+          const a=(rv/ring.mod)*Math.PI*2+ang0;
+          selScreen[key]={x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};
         }
       });
     });
 
-    if(window._opCurve){
-      const fw=minD*0.36,fh=minD*0.14;
-      const fxo=cx-fw/2,fyo=cy+minD*0.28;
-      const pulse=0.25+Math.sin(t*0.0018)*0.06;
-      const gr=ctx.createLinearGradient(fxo,0,fxo+fw,0);
-      gr.addColorStop(0,'rgba(61,200,184,1)');
-      gr.addColorStop(.3,'rgba(232,203,106,1)');
-      gr.addColorStop(.68,'rgba(144,112,216,1)');
-      gr.addColorStop(1,'rgba(224,80,96,0.2)');
-      ctx.save();ctx.globalAlpha=pulse;
-      ctx.beginPath();let st=false;
-      for(let ui=0;ui<=3.98;ui+=0.04){
-        const v=Fv(ui);if(v<=0){st=false;continue;}
-        const px=fxo+(ui/4)*fw,py=fyo-v/1.65*fh;
-        if(!st){ctx.moveTo(px,py);st=true;}else ctx.lineTo(px,py);
-      }
-      ctx.strokeStyle=gr;ctx.lineWidth=1.6;ctx.stroke();
-      [[0,Fv(0),'\u03b6(2)','#3dc8b8'],[1,1,'1','#e8cb6a'],[2,Fv(2),'C','#9070d8']].forEach(([u,v,lbl,col])=>{
-        const px=fxo+(u/4)*fw,py=fyo-v/1.65*fh;
-        ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);
-        ctx.fillStyle=col;ctx.globalAlpha=pulse*1.8;ctx.fill();
-        ctx.globalAlpha=pulse*1.4;
-        ctx.fillStyle=col;ctx.font='8px JetBrains Mono,monospace';
-        ctx.fillText(lbl,px+(u<2?5:-18),py-7);
+    // Draw connection lines between selected points (new color: violet)
+    if(selectedPoints.length>1){
+      const pts=selectedPoints.map(p=>{
+        const key=`${p.ri}:${p.rv}`;
+        return selScreen[key];
+      }).filter(Boolean);
+      ctx.beginPath();
+      pts.forEach((p,i)=>{if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});
+      ctx.strokeStyle='rgba(200,130,255,0.7)';ctx.lineWidth=1.2;ctx.stroke();
+    }
+
+    window._opRings.forEach((ring,ri)=>{
+      const prog=ring.liftProgress||1;
+      const r=(ring.liftFrom+(ring.rf-ring.liftFrom)*prog)*minD;
+      const ang0=t*ring.speed*ring.dir*spd-(ring._anchor||0);
+      const isSel=ri===(window._selectedRing||0);
+
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle=isSel
+        ?`rgba(61,200,184,${(0.22+ri*0.02)*prog})`
+        :`rgba(200,168,74,${(0.06+ri*0.015)*prog})`;
+      ctx.lineWidth=isSel?1.5:0.8;ctx.stroke();
+
+      ring.pts.forEach(({r:rv,lifts})=>{
+        const a=(rv/ring.mod)*Math.PI*2+ang0;
+        const x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);
+        const isSelected=selectedPoints.some(p=>p.ri===ri&&p.rv===rv);
+        const sz=(lifts?2.2:1.5)*(0.5+0.5*prog);
+
+        if(lifts){
+          if(!isSelected){
+            const g2=ctx.createRadialGradient(x,y,0,x,y,sz*4);
+            g2.addColorStop(0,`rgba(61,200,184,${0.18*prog})`);
+            g2.addColorStop(1,'rgba(61,200,184,0)');
+            ctx.beginPath();ctx.arc(x,y,sz*4,0,Math.PI*2);ctx.fillStyle=g2;ctx.fill();
+          }
+          ctx.beginPath();ctx.arc(x,y,isSelected?sz*1.8:sz,0,Math.PI*2);
+          ctx.fillStyle=isSelected?'rgba(200,130,255,0.95)':`rgba(61,200,184,${0.85*prog})`;
+          ctx.fill();
+          if(isSelected){
+            ctx.beginPath();ctx.arc(x,y,sz*2.5,0,Math.PI*2);
+            ctx.strokeStyle='rgba(200,130,255,0.35)';ctx.lineWidth=1;ctx.stroke();
+          }
+
+          if(prog>0.7&&ri<window._opRings.length-1){
+            const nr=window._opRings[ri+1];
+            const nAng0=t*nr.speed*nr.dir*spd-(nr._anchor||0);
+            const nrR=(nr.liftFrom+(nr.rf-nr.liftFrom)*(nr.liftProgress||1))*minD;
+
+            // Direct r→r: TEAL
+            if(window._opLiftDirect){
+              const na=(rv/nr.mod)*Math.PI*2+nAng0;
+              ctx.beginPath();ctx.moveTo(x,y);
+              ctx.lineTo(cx+nrR*Math.cos(na),cy+nrR*Math.sin(na));
+              ctx.strokeStyle=`rgba(61,200,184,${0.10*prog})`;ctx.lineWidth=0.6;ctx.stroke();
+            }
+            // Modular r+M·2ⁿ: AMBER bezier
+            if(window._opLiftLines){
+              const gfn=(a,b)=>{while(b){const xx=b;b=a%b;a=xx;}return a;};
+              const target=rv%nr.mod===0?nr.mod:rv%nr.mod;
+              const tL=gfn(target,nr.mod)===1&&gfn(target,nr.mod+1)===1;
+              const tAng=(target/nr.mod)*Math.PI*2+nAng0;
+              const tx=cx+nrR*Math.cos(tAng),ty=cy+nrR*Math.sin(tAng);
+              const mx2=(x+tx)/2-(y-ty)*0.15,my2=(y+ty)/2+(x-tx)*0.15;
+              ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(mx2,my2,tx,ty);
+              ctx.strokeStyle=tL?`rgba(232,180,60,${0.22*prog})`:`rgba(224,80,96,${0.14*prog})`;
+              ctx.lineWidth=0.9;ctx.stroke();
+              ctx.beginPath();ctx.arc(tx,ty,1.5,0,Math.PI*2);
+              ctx.fillStyle=tL?`rgba(232,180,60,${0.6*prog})`:`rgba(224,80,96,${0.4*prog})`;
+              ctx.fill();
+            }
+          }
+        } else {
+          ctx.beginPath();ctx.arc(x,y,isSelected?sz*1.8:sz*0.85,0,Math.PI*2);
+          ctx.fillStyle=isSelected?'rgba(200,130,255,0.8)':`rgba(224,80,96,${0.32*prog})`;
+          ctx.fill();
+        }
       });
+    });
+
+    // Tooltip for last clicked point
+    if(tooltip){
+      ctx.save();
+      ctx.fillStyle='rgba(2,2,8,0.82)';
+      const tw=ctx.measureText(tooltip.text).width+16;
+      ctx.fillRect(tooltip.x-tw/2,tooltip.y-16,tw,20);
+      ctx.fillStyle='rgba(200,130,255,0.9)';
+      ctx.font='10px JetBrains Mono,monospace';
+      ctx.textAlign='center';
+      ctx.fillText(tooltip.text,tooltip.x,tooltip.y-2);
+      ctx.textAlign='left';
       ctx.restore();
     }
 
-    t++;
-    af=requestAnimationFrame(draw);
+    t++;af=requestAnimationFrame(draw);
   }
 
-  resize(); draw();
+  resize();draw();
   window.addEventListener('resize',()=>{resize();},{passive:true});
-  // Seed controls with ring 0 after a tick
-  setTimeout(()=>{
-    const r0=window._opRings[0];
-    if(r0) _updateModPts(r0);
-  }, 100);
+  setTimeout(()=>{const r0=window._opRings[0];if(r0)_updateModPts(r0);},100);
 })();
 
+
+
 // ── OPENER CONTROL STATE ──
-const _TEXT_IDS = ['op-label','op-title','op-sub','op-eq','op-author','op-rings','op-c'];
+function opMakePts(mod){
+  const g=(a,b)=>{while(b){const x=b;b=a%b;a=x;}return a;};
+  const pts=[];
+  for(let r=1;r<=mod;r++){
+    if(g(r,mod)!==1) continue;
+    pts.push({r,lifts:g(r,mod+1)===1});
+  }
+  return pts;
+}
+const _TEXT_IDS=['op-label','op-title','op-sub','op-eq','op-author','op-rings','op-c'];
 let _textVisible = true;
 
 function opToggleAllText(btn){
@@ -1331,42 +1450,43 @@ function opSelectRing(btn, idx){
 }
 
 function _autoSpaceRings(){
-  // Evenly space rings between rf 0.08 and 0.42
   const n = window._opRings.length;
   window._opRings.forEach((ring, i) => {
-    ring.rf = 0.08 + (0.38 - 0.08) * (i / Math.max(n - 1, 1));
+    ring.rf = 0.05 + (0.46 - 0.05) * (i / Math.max(n - 1, 1));
   });
   if(n === 1) window._opRings[0].rf = 0.22;
 }
 
 function opAddRing(){
-  const rings = window._opRings;
-  const lastMod = rings[rings.length - 1].mod;
-  // Suggest next primorial or double
-  const nextMod = lastMod <= 30 ? lastMod * 7 : lastMod * 2;
-  const newMod = Math.min(9999, nextMod);
-  const dirs = [1,-1,1,-1,1,-1,1,-1];
-  const newRing = {
-    mod: newMod,
-    rf: 0.42,
-    speed: Math.max(0.00003, rings[rings.length-1].speed * 0.6),
-    dir: dirs[rings.length % 2],
-    pts: []
+  const rings=window._opRings;
+  const lastMod=rings[rings.length-1].mod;
+  const newMod=Math.min(9999,lastMod*2);
+  const n=rings.length;
+  const DIRS=[1,-1,1,-1,1,-1,1,-1,1,-1];
+  const bgRfFn=(m)=>0.03+(0.50-0.03)*(Math.min(m,72)-2)/(72-2);
+  const newRing={
+    mod:newMod,
+    rf:0.44,
+    speed:Math.max(0.00003,rings[rings.length-1].speed*0.6),
+    dir:DIRS[n%2],
+    pts:opMakePts(newMod),
+    liftProgress:0,
+    liftFrom:bgRfFn(newMod),
+    _anchor:0,
   };
-  // Compute pts
-  const g=(a,b)=>{while(b){const x=b;b=a%b;a=x;}return a;};
-  for(let r=1; r<=newMod; r++){
-    if(g(r,newMod)!==1) continue;
-    newRing.pts.push({r, lifts: g(r,newMod+1)===1});
-  }
   rings.push(newRing);
   _autoSpaceRings();
-  // Select the new ring
-  window._selectedRing = rings.length - 1;
+  window._selectedRing=rings.length-1;
   _rebuildRingButtons();
-  document.getElementById('op-mod-input').value = newMod;
+  document.getElementById('op-mod-input').value=newMod;
   _updateModPts(newRing);
   _updateCornerLabel();
+  // Animate lift-in
+  (function anim(){
+    if(newRing.liftProgress>=1){newRing.liftProgress=1;return;}
+    newRing.liftProgress=Math.min(1,newRing.liftProgress+0.022);
+    requestAnimationFrame(anim);
+  })();
 }
 
 function opRemoveRing(){
@@ -1403,17 +1523,12 @@ function opSetRingSpeed(v){
 }
 
 function opSetMod(v){
-  const m = Math.max(2, Math.min(9999, parseInt(v)||6));
+  const m = Math.max(1, Math.min(9999, parseInt(v)||1));
   document.getElementById('op-mod-input').value = m;
   const ring = window._opRings[window._selectedRing];
   if(!ring) return;
   ring.mod = m;
-  ring.pts = [];
-  const g=(a,b)=>{while(b){const x=b;b=a%b;a=x;}return a;};
-  for(let r=1; r<=m; r++){
-    if(g(r,m)!==1) continue;
-    ring.pts.push({r, lifts: g(r,m+1)===1});
-  }
+  ring.pts = opMakePts(m);
   _updateModPts(ring);
   _updateCornerLabel();
 }
@@ -2210,41 +2325,7 @@ function drawFu(hoverU){
   document.getElementById('fu-F2').textContent=computeFu(2,400).toFixed(12);
 }
 
-// F(u) hover listener
-window.addEventListener('load',()=>{
-  setTimeout(()=>{
-    const fc=document.getElementById('fu-canvas');
-    if(!fc)return;
-    function fuMouse(e){
-      const rect=fc.getBoundingClientRect();
-      if(!rect.width)return;
-      const fuMax=+document.getElementById('fu-max').value/10;
-      drawFu((e.clientX-rect.left)/rect.width*fuMax);
-    }
-    fc.addEventListener('mousemove',fuMouse);
-    fc.addEventListener('click',fuMouse);
-    fc.addEventListener('mouseleave',()=>drawFu());
-  },2000);
-});
 
-// ═══════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════
-window.addEventListener('load',()=>{
-  buildRatioList();
-  precompute(()=>{
-    M=30;
-    for(let m=1;m<=30;m++) addTableRow(m);
-    updateDisplay();
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      drawMain(); drawRing(); buildClabels();
-    }));
-  });
-});
-window.addEventListener('resize',()=>{
-  const active=document.querySelector('.tab-panel.active')?.id;
-  if(active==='tab-cx'){drawCx();drawFu();}else{drawMain();drawRing();}
-},{passive:true});
 
 
 function drawLandmark(){
@@ -2330,4 +2411,4 @@ window.addEventListener('resize',()=>{
 
 </script>
 </body>
-</html>
+      </html>
