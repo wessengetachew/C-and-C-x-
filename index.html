@@ -435,19 +435,14 @@ body.op-active{overflow:hidden;}
     <div class="opc-sep"></div>
 
     <!-- Gap dynamics -->
-    <div class="opc-label" style="margin-top:7px;">Gap Lines A(g,M)</div>
+    <div class="opc-label" style="margin-top:7px;">Gap Lines A(g,M) — all even 2n ≤ g</div>
     <div class="opc-row" style="align-items:center;gap:7px;margin-bottom:4px;">
       <span class="opc-val">g=</span>
-      <input type="range" id="op-gap-sl" min="0" max="100" step="1" value="0"
+      <input type="range" id="op-gap-sl" min="0" max="100" step="2" value="0"
         oninput="opUpdateGap(+this.value)" style="flex:1;accent-color:var(--gold);">
-      <span class="opc-val" id="op-gap-val" style="width:24px;text-align:right;">0</span>
+      <span class="opc-val" id="op-gap-val" style="width:30px;text-align:right;">off</span>
     </div>
-    <div style="display:flex;gap:8px;font-family:var(--mono);font-size:9px;">
-      <div style="flex:1;"><span style="color:var(--cream3)">A(g)</span> <span id="op-gap-ag" style="color:var(--teal)">—</span></div>
-      <div style="flex:1;"><span style="color:var(--cream3)">A(2)</span> <span id="op-gap-a2" style="color:var(--cream3)">—</span></div>
-      <div style="flex:1;"><span style="color:var(--cream3)">ratio</span> <span id="op-gap-ratio" style="color:var(--gold)">—</span></div>
-    </div>
-    <div style="font-family:var(--mono);font-size:8px;color:var(--cream3);margin-top:3px;" id="op-gap-theory"></div>
+    <div id="op-gap-result" style="font-family:var(--mono);font-size:8px;max-height:110px;overflow-y:auto;"></div>
 
     <div class="opc-sep" style="margin-top:7px;"></div>
 
@@ -502,17 +497,17 @@ body.op-active{overflow:hidden;}
         <div class="opc-label" style="margin-bottom:8px;">Background</div>
         <div class="opc-row" style="align-items:center;gap:8px;margin-bottom:7px;">
           <span class="opc-val">Max mod</span>
-          <input type="range" id="adv-bg-mod" min="1" max="512" value="512"
+          <input type="range" id="adv-bg-mod" min="1" max="512" value="128"
             oninput="window._opBgMod=+this.value;document.getElementById('adv-bg-mod-val').textContent=this.value"
             style="flex:1;accent-color:var(--gold);">
-          <span class="opc-val" id="adv-bg-mod-val">512</span>
+          <span class="opc-val" id="adv-bg-mod-val">128</span>
         </div>
         <div class="opc-row" style="align-items:center;gap:8px;margin-bottom:7px;">
           <span class="opc-val">Lift lines</span>
-          <input type="range" id="adv-bg-lift" min="0" max="10" value="0" step="0.5"
+          <input type="range" id="adv-bg-lift" min="0" max="10" value="2" step="0.5"
             oninput="window._opBgLiftThick=+this.value;document.getElementById('adv-bg-lift-val').textContent=this.value"
             style="flex:1;accent-color:var(--gold);">
-          <span class="opc-val" id="adv-bg-lift-val">0</span>
+          <span class="opc-val" id="adv-bg-lift-val">2</span>
         </div>
         <div class="opc-row" style="align-items:center;gap:8px;">
           <span class="opc-val">BG size</span>
@@ -537,10 +532,11 @@ body.op-active{overflow:hidden;}
             style="flex:1;accent-color:var(--gold);">
         </div>
         <div class="opc-row" style="align-items:center;gap:8px;">
-          <span class="opc-val">Ghost opacity</span>
-          <input type="range" min="0" max="10" value="3"
-            oninput="window._opGhostAlpha=+this.value/100"
+          <span class="opc-val">Lift line α</span>
+          <input type="range" id="adv-lift-alpha" min="0" max="10" step="0.5" value="5"
+            oninput="window._opLiftAlpha=+this.value/10;document.getElementById('adv-lift-alpha-val').textContent=this.value"
             style="flex:1;accent-color:var(--gold);">
+          <span class="opc-val" id="adv-lift-alpha-val">5</span>
         </div>
       </div>
 
@@ -575,7 +571,7 @@ body.op-active{overflow:hidden;}
           <button class="opc-btn" onclick="opRunSieve()">Run</button>
           <button class="opc-btn" onclick="opClearSieve()">Clear</button>
         </div>
-        <div id="adv-sieve-result" style="font-size:9px;color:rgba(255,255,255,.4);margin-top:6px;"></div>
+        <div id="adv-sieve-result" style="font-size:9px;color:rgba(255,255,255,.4);margin-top:6px;min-height:180px;"></div>
       </div>
 
     </div>
@@ -1356,9 +1352,11 @@ window._opLiftDirect = true;
 
   /* ── background lattice state ── */
   const BG_MAX = 512;
-  window._opBgMod = 512;
+  window._opBgMod = 128;
   window._opLockBg = false;
   window._opBgRotations = {}; // per-mod rotation offsets when locked
+  window._opBgLiftThick = 2;
+  window._opLiftAlpha = 0.5; // Lift line α default (slider value 5 → 5/10)
 
   /* ── active rings ── */
   const DIRS=[1,-1,1,-1,1,-1,1,-1,1,-1];
@@ -1366,7 +1364,7 @@ window._opLiftDirect = true;
     const rf=0.10+(0.44-0.10)*(idx/Math.max(total-1,1));
     const bgScale=window._opBgScale||1;
     const liftFrom=(mod/130)*0.46*bgScale;
-    return {mod,rf,speed:0,dir:DIRS[idx%2],pts:makePts(mod),liftProgress:1,liftFrom,_anchor:0};
+    return {mod,rf,speed:0,dir:DIRS[idx%2],pts:makePts(mod),liftProgress:0,liftFrom,_anchor:0};
   }
   const DEF=[30,60,120,240];
   const RINGS=DEF.map((m,i)=>makeRing(m,i,DEF.length));
@@ -1378,7 +1376,8 @@ window._opLiftDirect = true;
     ring.liftProgress=Math.min(1,ring.liftProgress+0.022);
     requestAnimationFrame(()=>animLift(ring));
   }
-  // Rings start fully lifted (liftProgress=1) at speed=0 — no animation needed
+  // All 4 initial rings lift in simultaneously — smooth, no stagger
+  RINGS.forEach(ring=>animLift(ring));
 
   /* ── anchor / reset ── */
   window._opAnchor=function(){
@@ -1506,7 +1505,8 @@ window._opLiftDirect = true;
     const showDirect=window._opLiftDirect;
     const showModular=window._opLiftLines;
     const bgLiftThick=window._opBgLiftThick||0;
-    const bgMax=Math.min(window._opBgMod||512,BG_MAX);
+    const bgMax=Math.min(window._opBgMod||128,BG_MAX);
+    const liftAlpha=window._opLiftAlpha!==undefined?window._opLiftAlpha:0.5;
 
     // Full clear — no trail blur on background
     ctx.clearRect(0,0,W,H);
@@ -1550,8 +1550,8 @@ window._opLiftDirect = true;
               const a2=ang(rv,nm,0);
               ctx.beginPath();ctx.moveTo(x1,y1);
               ctx.lineTo(cx+nr2*Math.cos(a2),cy+nr2*Math.sin(a2));
-              ctx.strokeStyle=`rgba(61,200,184,${Math.min(bgLiftThick*0.04,0.4)})`;
-              ctx.lineWidth=Math.max(0.3, bgLiftThick*0.4);ctx.stroke();
+              ctx.strokeStyle=`rgba(61,200,184,${Math.min(bgLiftThick*0.04*liftAlpha*2,0.6)})`;
+              ctx.lineWidth=Math.max(0.3, bgLiftThick*0.4*liftAlpha*2);ctx.stroke();
             }
           });
         }
@@ -1621,25 +1621,25 @@ window._opLiftDirect = true;
       ctx.strokeStyle=isSel?`rgba(61,200,184,${(0.24)*prog})`:`rgba(200,168,74,${0.07*prog})`;
       ctx.lineWidth=isSel?1.6:0.8;ctx.stroke();
 
-      /* ── Gap pair lines: connect r to r+g within this ring ── */
+      /* ── Gap pair lines: all even gaps 2n ≤ g within this ring ── */
       const g=window._opGapSize||0;
       if(g>0&&prog>0.5){
-        // Build coprime set for fast lookup
         const copSet=new Set(ring.pts.filter(p=>p.cop).map(p=>p.r));
-        ring.pts.forEach(({r:rv,cop})=>{
-          if(!cop) return;
-          const partner=(rv+g)%ring.mod||ring.mod; // (r+g) mod M, in range [1..M]
-          if(!copSet.has(partner)) return;
-          const a1=ang(rv,ring.mod,a0);
-          const a2=ang(partner,ring.mod,a0);
-          const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
-          const x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
-          ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
-          // Color: hue shifts with gap size 0→100 maps green→magenta
-          const hue=Math.round(120+g*1.5)%360;
-          ctx.strokeStyle=`hsla(${hue},90%,65%,${0.28*prog})`;
-          ctx.lineWidth=0.7;ctx.stroke();
-        });
+        for(let eg=2;eg<=g;eg+=2){
+          const hue=Math.round(160+eg*16)%360;
+          ring.pts.forEach(({r:rv,cop})=>{
+            if(!cop) return;
+            const partner=(rv+eg)%ring.mod||ring.mod;
+            if(!copSet.has(partner)) return;
+            const a1=ang(rv,ring.mod,a0);
+            const a2=ang(partner,ring.mod,a0);
+            const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+            const x2=cx+r*Math.cos(a2),y2=cy+r*Math.sin(a2);
+            ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+            ctx.strokeStyle=`hsla(${hue},88%,62%,${0.26*prog})`;
+            ctx.lineWidth=0.7;ctx.stroke();
+          });
+        }
       }
 
       ring.pts.forEach(({r:rv,cop})=>{
@@ -1685,7 +1685,7 @@ window._opLiftDirect = true;
               } else {
                 ctx.lineTo(tx,ty);
               }
-              ctx.strokeStyle=`rgba(61,200,184,${0.18*prog})`;
+              ctx.strokeStyle=`rgba(61,200,184,${0.18*prog*liftAlpha*2})`;
               ctx.lineWidth=0.8;ctx.stroke();
             }
 
@@ -1708,7 +1708,7 @@ window._opLiftDirect = true;
               } else {
                 ctx.lineTo(tx,ty);
               }
-              ctx.strokeStyle=tL?`rgba(232,180,60,${0.22*prog})`:`rgba(224,80,96,${0.16*prog})`;
+              ctx.strokeStyle=tL?`rgba(232,180,60,${0.22*prog*liftAlpha*2})`:`rgba(224,80,96,${0.16*prog*liftAlpha*2})`;
               ctx.lineWidth=0.85;ctx.stroke();
               // Target dot
               ctx.beginPath();ctx.arc(tx,ty,1.8,0,Math.PI*2);
@@ -1762,8 +1762,9 @@ let _textVisible=true;
 // Initialize global flags
 window._opShowNonGcd = false;
 window._opLockBg = false;
-window._opBgMod = 512;
+window._opBgMod = 128;
 window._opBgLiftThick = 2;
+window._opLiftAlpha = 0.5;
 window._opColorMode = 'r_hue';
 window._opCoord = 'polar';
 window._opGapHighlight = 0;
@@ -1973,40 +1974,43 @@ function opUpdateGap(g){
   g = g||0;
   window._opGapSize = g;
   const valEl=document.getElementById('op-gap-val');
-  if(valEl) valEl.textContent=g;
-  if(g===0){
-    ['op-gap-ag','op-gap-a2','op-gap-ratio'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
-    const th=document.getElementById('op-gap-theory');
-    if(th){th.textContent='';th.style.color='';}
-    return;
-  }
+  if(valEl) valEl.textContent=g===0?'off':g;
+  const resEl=document.getElementById('op-gap-result');
+  if(g===0){ if(resEl) resEl.innerHTML=''; return; }
   const rings=window._opRings;
   if(!rings||!rings.length) return;
   const m=rings[0].mod;
   if(m>5000){
-    ['op-gap-ag','op-gap-a2','op-gap-ratio'].forEach(id=>{document.getElementById(id).textContent='—';});
-    const th=document.getElementById('op-gap-theory');if(th)th.textContent='M too large';
+    if(resEl) resEl.innerHTML='<span style="color:rgba(255,255,255,.3)">M too large</span>';
     return;
   }
   const gcdfn=(a,b)=>{while(b){const x=b;b=a%b;a=x;}return a;};
   const cp=(gap,M)=>{let c=0;for(let r=1;r<=M;r++)if(gcdfn(r,M)===1&&gcdfn((r+gap)%M||M,M)===1)c++;return c;};
-  const ag=cp(g,m), a2=cp(2,m);
-  const elAg=document.getElementById('op-gap-ag'); if(elAg) elAg.textContent=ag;
-  const elA2=document.getElementById('op-gap-a2'); if(elA2) elA2.textContent=a2;
-  const ratio=a2>0?ag/a2:NaN;
-  const ratioEl=document.getElementById('op-gap-ratio');
-  if(ratioEl) ratioEl.textContent=!isNaN(ratio)?ratio.toFixed(4):'—';
-  let theory=null;
-  if(g%2===0&&g>0){
-    let tmp=g, oddPs=[];
+  const a2=cp(2,m);
+  let rows='';
+  for(let eg=2;eg<=g;eg+=2){
+    const ag=cp(eg,m);
+    const ratio=a2>0?ag/a2:NaN;
+    let theory=1,tmp=eg,oddPs=[];
     for(let p=3;p<=tmp;p+=2) if(tmp%p===0){oddPs.push(p);while(tmp%p===0)tmp=Math.floor(tmp/p);}
-    theory=oddPs.reduce((acc,q)=>acc*(q-1)/(q-2),1);
+    oddPs.forEach(q=>{theory*=(q-1)/(q-2);});
+    const hue=Math.round(160+eg*16)%360;
+    const match=!isNaN(ratio)&&Math.abs(ratio-theory)<0.05;
+    rows+=`<tr>
+      <td style="color:hsla(${hue},85%,65%,1);padding:1px 5px">g=${eg}</td>
+      <td style="text-align:right;padding:1px 5px;color:rgba(255,255,255,.7)">${ag}</td>
+      <td style="text-align:right;padding:1px 5px;color:${match?'#3dc8b8':'#c8a84a'}">${!isNaN(ratio)?ratio.toFixed(3):'—'}</td>
+      <td style="text-align:right;padding:1px 5px;color:rgba(255,255,255,.3)">${theory.toFixed(3)}</td>
+    </tr>`;
   }
-  const thEl=document.getElementById('op-gap-theory');
-  if(thEl){
-    thEl.textContent=theory!==null?`p# theory: A(${g})/A(2) → ${theory.toFixed(4)}`:(g%2===1?'odd gap':g===0?'':'—');
-    thEl.style.color=(!isNaN(ratio)&&theory!==null&&Math.abs(ratio-theory)<0.05)?'var(--teal)':'rgba(255,255,255,.25)';
-  }
+  if(resEl) resEl.innerHTML=
+    `<table style="width:100%;border-collapse:collapse;">
+      <tr style="color:rgba(255,255,255,.25);border-bottom:1px solid rgba(255,255,255,.07)">
+        <th style="text-align:left;padding:1px 5px;font-weight:400">gap</th>
+        <th style="text-align:right;padding:1px 5px;font-weight:400">A(g)</th>
+        <th style="text-align:right;padding:1px 5px;font-weight:400">÷A(2)</th>
+        <th style="text-align:right;padding:1px 5px;font-weight:400">theory</th>
+      </tr>${rows}</table>`;
 }
 
 function opToggleLockBg(btn){
@@ -2044,9 +2048,60 @@ function opRunSieve(){
   setTimeout(()=>{
     const s=new Uint8Array(n+1).fill(1);s[0]=s[1]=0;
     for(let i=2;i*i<=n;i++) if(s[i]) for(let j=i*i;j<=n;j+=i) s[j]=0;
-    let cnt=0;for(let i=2;i<=n;i++) if(s[i]) cnt++;
+
+    const primes=[];for(let i=2;i<=n;i++) if(s[i]) primes.push(i);
+    const cnt=primes.length;
+    const largest=primes[cnt-1]??0;
+    let twins=0;
+    for(let i=0;i<cnt-1;i++) if(primes[i+1]-primes[i]===2) twins++;
+    const density=cnt/n;
+
+    // ── 8 framework constants (partial sums/products up to p ≤ n) ──
+    let zeta2=1, C=1, cftProd=1;
+    let P2=0, J=0, T=0, S=0, Q=0, U=0;
+    for(const p of primes){
+      const p2=p*p;
+      zeta2  *= p2/(p2-1);
+      C      *= (p2-2)/(p2-1);
+      cftProd*= (1-2/p2);
+      P2 += 1/p2;
+      J  += 1/(p*(p-1));
+      T  += 1/(p2*(p-1));
+      S  += 1/(p2-1);
+      Q  += 1/(p2*(p2-1));
+      U  += 1/(p*(p-1)*(p+1));
+    }
+    const CFT=0.5*(1+cftProd);
+
     window._opSievePrimes=s;
-    el.textContent=`${cnt} primes ≤ ${n}`;
+
+    const row=(sym,val,col,def)=>
+      `<tr>
+        <td style="color:${col};padding:2px 5px;white-space:nowrap">${sym}</td>
+        <td style="color:rgba(255,255,255,.65);font-size:8px;padding:2px 5px">${def}</td>
+        <td style="color:${col};text-align:right;padding:2px 5px;letter-spacing:.02em">${val}</td>
+      </tr>`;
+
+    el.innerHTML=
+      `<div style="margin-bottom:5px;color:rgba(255,255,255,.3);font-size:7.5px;letter-spacing:.15em">
+        π(${n})=${cnt.toLocaleString()} &nbsp;·&nbsp; largest p=${largest.toLocaleString()} &nbsp;·&nbsp; twins=${twins.toLocaleString()} &nbsp;·&nbsp; density=${density.toFixed(5)}
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:9px;">
+        <tr style="color:rgba(255,255,255,.22);border-bottom:1px solid rgba(255,255,255,.08)">
+          <th style="text-align:left;padding:2px 5px;font-weight:400">const</th>
+          <th style="text-align:left;padding:2px 5px;font-weight:400">definition</th>
+          <th style="text-align:right;padding:2px 5px;font-weight:400">partial (p≤${n})</th>
+        </tr>
+        ${row('ζ(2)', zeta2.toFixed(8), '#e8cb6a',       '∏ p²/(p²−1)')}
+        ${row('C',    C.toFixed(8),     '#c8a84a',       '∏ (p²−2)/(p²−1)')}
+        ${row('C&#x209B;&#x209C;',CFT.toFixed(8),'#3dc8b8','½(1+∏(1−2/p²))')}
+        ${row('P(2)', P2.toFixed(8),    '#4898e8',       '∑ 1/p²')}
+        ${row('J',    J.toFixed(8),     '#9070d8',       '∑ 1/(p(p−1))')}
+        ${row('T',    T.toFixed(8),     '#80c860',       '∑ 1/(p²(p−1))')}
+        ${row('S ★',  S.toFixed(8),     '#80c860',       '∑ 1/(p²−1)')}
+        ${row('Q ★',  Q.toFixed(8),     '#58b8e8',       '∑ 1/(p²(p²−1))')}
+        ${row('U ★',  U.toFixed(8),     '#e8a840',       '∑ 1/(p(p−1)(p+1))')}
+      </table>`;
   },10);
 }
 function opClearSieve(){
@@ -3137,4 +3192,4 @@ window.addEventListener('resize',()=>{
 
 </script>
 </body>
-  </html>
+      </html>
