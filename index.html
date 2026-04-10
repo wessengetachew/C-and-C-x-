@@ -1178,8 +1178,8 @@ body.op-active{overflow:hidden;}
   <div class="bc active" onclick="bcSel(0)"><div class="bc-l">C</div><div class="bc-v" id="bc-C" style="color:var(--gold2)">—</div><div class="bc-t">→ 0.530712</div></div>
   <div class="bc" onclick="bcSel(1)"><div class="bc-l">φ(M)/M avg</div><div class="bc-v" id="bc-phi" style="color:var(--teal)">—</div><div class="bc-t">→ 6/π²≈0.6079</div></div>
   <div class="bc" onclick="bcSel(2)"><div class="bc-l">Lift rate</div><div class="bc-v" id="bc-lft" style="color:var(--coral)">—</div><div class="bc-t">→ C≈0.5307</div></div>
-  <div class="bc" onclick="bcSel(3)"><div class="bc-l">J partial</div><div class="bc-v" id="bc-J" style="color:var(--violet)">—</div><div class="bc-t">→ 0.773126</div></div>
-  <div class="bc" onclick="bcSel(4)"><div class="bc-l">D₀ partial</div><div class="bc-v" id="bc-D0" style="color:var(--sky)">—</div><div class="bc-t">→ 0.452217</div></div>
+  <div class="bc" onclick="bcSel(3)"><div class="bc-l">J partial</div><div class="bc-v" id="bc-J" style="color:var(--violet)">—</div><div class="bc-t">→ 0.773155</div></div>
+  <div class="bc" onclick="bcSel(4)"><div class="bc-l">D₀ partial</div><div class="bc-v" id="bc-D0" style="color:var(--sky)">—</div><div class="bc-t">→ 0.452247</div></div>
   <div class="bc" onclick="bcSel(5)"><div class="bc-l">T partial</div><div class="bc-v" id="bc-T" style="color:var(--lime)">—</div><div class="bc-t">→ 0.320909</div></div>
   <div class="bc" onclick="bcSel(9)"><div class="bc-l">S = −F′(1)</div><div class="bc-v" id="bc-S" style="color:var(--lime)">—</div><div class="bc-t">→ 0.551693</div></div>
   <div class="bc" onclick="bcSel(10)"><div class="bc-l">Q = S−D₀</div><div class="bc-v" id="bc-Q" style="color:#58b8e8">—</div><div class="bc-t">→ 0.099446</div></div>
@@ -2279,12 +2279,12 @@ const RATIOS=[
    eq:'lifts(M)/φ(M) = #{r≤M : gcd(r,M)=1, gcd(r,M+1)=1} / φ(M)',
    proof:'This is the local lift survival rate at modulus M — the fraction of coprime residues that also survive to M+1. It is not monotone: it equals 1 when M+1 is prime (every coprime residue has gcd with M+1=1) and drops at composite M+1. The running average of this ratio converges to C.',
    full:'When M+1 is prime, every r coprime to M satisfies gcd(r,M+1)=1 trivially (since M+1 is prime and r<M+1). So lifts(M)=φ(M) and ratio=1. When M+1 is composite, the ratio drops below 1. The oscillation averages out to C.'},
-  {key:'J',     name:'J = Σ 1/(p(p−1))',         desc:'→ 0.773126087',      color:'#9070d8',target:0.773126087,on:true,
+  {key:'J',     name:'J = Σ 1/(p(p−1))',         desc:'→ 0.773154969',      color:'#9070d8',target:0.773154969,on:true,
    formula:'J = Σ_{p prime, p≤M} 1/(p(p−1))',
    eq:'J = ∑_p 1/(p(p−1)) = 1/2 + 1/6 + 1/20 + 1/42 + ...',
    proof:'Each prime p contributes exactly 1/(p(p−1)) to J. This is the "jump" that prime p contributes to the total jump content of the ring system. The sum converges absolutely since 1/(p(p−1)) ~ 1/p² and Σ1/p² converges.',
    full:'J is the total jump content of the lift framework. It satisfies J = D₀ + T term-by-term: 1/(p(p−1)) = 1/p² + 1/(p²(p−1)). This decomposition is algebraic — it holds for each prime individually.'},
-  {key:'D0',    name:'D₀ = Σ 1/p²',              desc:'→ 0.452216843',      color:'#4898e8',target:0.4522168,on:false,
+  {key:'D0',    name:'D₀ = Σ 1/p²',              desc:'→ 0.452247306',      color:'#4898e8',target:0.452247306,on:false,
    formula:'D₀ = Σ_{p prime, p≤M} 1/p² = P(2)',
    eq:'D₀ = ∑_p p^{−2} = 1/4 + 1/9 + 1/25 + 1/49 + ...',
    proof:'D₀ is the prime zeta function P(2) evaluated at s=2. It is a classical object. Its convergence follows from the prime number theorem. D₀ ≈ 0.4522 is the "direct" component of J.',
@@ -3137,4 +3137,4 @@ window.addEventListener('resize',()=>{
 
 </script>
 </body>
-</html>
+  </html>
